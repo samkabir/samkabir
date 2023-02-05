@@ -3,7 +3,13 @@ import Image from 'next/image'
 import { Inter } from '@next/font/google'
 import styles from '@/styles/Home.module.css'
 import Header from '@/components/Header/header'
-import SocialMediaLinks from '@/components/SocialMediaLinks.js/SocialMediaLinks'
+import SocialMediaLinks from '@/components/SocialMediaLinks/SocialMediaLinks'
+import AboutMe from '@/components/AboutMe/AboutMe'
+import Experience from '@/components/Experience/Experience'
+import DemoProjects from '@/components/DemoProjects/DemoProjects'
+import Contact from '@/components/Contact/Contact'
+import MainComponent from '@/components/Home/MainComponent'
+import { Box } from '@mui/material'
 
 
 const inter = Inter({ subsets: ['latin'] })
@@ -20,6 +26,13 @@ export default function Home() {
       <main>
         <Header />
         <SocialMediaLinks />
+        <Box className='px-4 md:px-20 py-8'>
+          <MainComponent />
+          <AboutMe />
+          <Experience />
+          <DemoProjects />
+          <Contact />
+        </Box>
       </main>
     </>
   )
