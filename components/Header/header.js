@@ -62,19 +62,19 @@ const Header = () => {
                 >
                     <ul className="items-center justify-center space-y-8 md:flex md:space-x-6 md:space-y-0 font-semibold">
                         <li className="text-gray-600 hover:text-[#7a61ff] my-2">
-                            <a href="javascript:void(0)"><span className='text-[#7a61ff]'>01.</span> About</a>
+                            <a href="javascript:void(0)"><span className='text-[#7a61ff]'>00.</span> About</a>
                         </li>
                         {/* <li className="text-gray-600 hover:text-blue-600">
                             <a href="javascript:void(0)">Blog</a>
                         </li> */}
                         <li className="text-gray-600 hover:text-[#7a61ff] my-2">
-                            <a href="javascript:void(0)"><span className='text-[#7a61ff]'>02.</span> Experience</a>
+                            <a href="javascript:void(0)"><span className='text-[#7a61ff]'>01.</span> Experience</a>
                         </li>
                         <li className="text-gray-600 hover:text-[#7a61ff] my-2">
-                            <a href="javascript:void(0)"><span className='text-[#7a61ff]'>03.</span> Work</a>
+                            <a href="javascript:void(0)"><span className='text-[#7a61ff]'>10.</span> Work</a>
                         </li>
                         <li className="text-gray-600 hover:text-[#7a61ff] my-2">
-                            <a href="javascript:void(0)"><span className='text-[#7a61ff]'>04.</span> Contact</a>
+                            <a href="javascript:void(0)"><span className='text-[#7a61ff]'>11.</span> Contact</a>
                         </li>
                     </ul>
                 </div>

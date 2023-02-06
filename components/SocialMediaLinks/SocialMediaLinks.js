@@ -9,9 +9,9 @@ const SocialMediaLinks = () => {
         <div className='hidden md:block'>
             <Box>
                 <ul className='list-none m-0 p-0 fixed overflow-auto bottom-36 left-8'>
-                    <li><a className="active" href="https://www.facebook.com/fahim.kabir.5/"><FacebookIcon className="text-4xl mb-4 hover:text-[#3b5998] transform transition duration-500 hover:text-[40px]" /></a></li>
-                    <li><a className="active" href="https://github.com/samkabir"><GitHubIcon className="text-4xl mb-4 hover:text-[#171515] transform transition duration-500 hover:text-[40px]" /></a></li>
                     <li><a className="active" href="https://www.linkedin.com/in/samkabir/"><LinkedInIcon className="text-4xl mb-2 hover:text-[#0072b1] transform transition duration-500 hover:text-[40px]" /></a></li>
+                    <li><a className="active" href="https://github.com/samkabir"><GitHubIcon className="text-4xl mb-2 hover:text-[#171515] transform transition duration-500 hover:text-[40px]" /></a></li>
+                    <li><a className="active" href="https://www.facebook.com/fahim.kabir.5/"><FacebookIcon className="text-4xl mb-4 hover:text-[#3b5998] transform transition duration-500 hover:text-[40px]" /></a></li>
                 </ul>
             </Box>
             <Box>
