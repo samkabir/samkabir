@@ -28,10 +28,12 @@ export default function Home() {
         <SocialMediaLinks />
         <Box className='px-4 md:px-20 py-8'>
           <MainComponent />
-          <AboutMe />
-          <Experience />
-          <DemoProjects />
-          <Contact />
+          <Box className='px-4 md:px-20'>
+            <AboutMe />
+            <Experience />
+            <DemoProjects />
+            <Contact />
+          </Box>
         </Box>
       </main>
     </>
