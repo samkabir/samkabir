@@ -13,7 +13,7 @@ const MainComponent = () => {
     return (
         <div className='my-10 mx-10 text-white'>
             <Box>
-                <Typography variant='subtitle1' className={`${itim.variable} font-sans pb-2 pl-1`} >
+                <Typography variant='h6' className={`${itim.variable} font-sans pb-2 pl-1`} >
                     Hi, This is
                 </Typography>
             </Box>
