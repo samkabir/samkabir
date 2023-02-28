@@ -5,6 +5,9 @@ import Tabs from '@mui/material/Tabs';
 import Tab from '@mui/material/Tab';
 import { experience } from '../../data/experience';
 import ArrowRightIcon from '@mui/icons-material/ArrowRight';
+import AOS from 'aos';
+import 'aos/dist/aos.css';
+import { useEffect } from 'react';
 
 function TabPanel(props) {
     const { children, value, index, ...other } = props;
@@ -42,11 +45,15 @@ function a11yProps(index) {
 const Experience = () => {
     const [value, setValue] = React.useState(0);
 
+    useEffect(() => {
+        AOS.init();
+      }, [])
+
     const handleChange = (event, newValue) => {
         setValue(newValue);
     };
     return (
-        <Box className='py-10 md:h-[500px]' id='exp'>
+        <Box className='py-10 md:h-[500px]' id='exp' data-aos="fade-down" data-aos-easing="ease-in-out" data-aos-duration="1000" data-aos-delay="50" data-aos-once="true">
             <Box>
                 <Typography variant='h4' className='font-semibold text-[#d2d2d2]'>
                     <span className='text-[#7a61ff]'>01. </span> Job Experiences

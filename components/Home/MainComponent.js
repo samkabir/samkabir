@@ -2,6 +2,10 @@ import { Box, Typography } from '@mui/material';
 import Link from 'next/link';
 import React from 'react';
 import { Itim } from '@next/font/google';
+import AOS from 'aos';
+import 'aos/dist/aos.css';
+import { useEffect } from 'react';
+
 
 const itim = Itim({
     subsets: ['latin'],
@@ -10,8 +14,13 @@ const itim = Itim({
 })
 
 const MainComponent = () => {
+
+    useEffect(() => {
+        AOS.init();
+      }, [])
+
     return (
-        <div className='my-10 mx-10 text-white md:h-[400px]'>
+        <div className='my-10 mx-10 text-white md:h-[400px]'  data-aos="fade-down" data-aos-easing="ease-in-out" data-aos-duration="1000" data-aos-delay="50" data-aos-once="true">
             <Box>
                 <Typography variant='h6' className={`${itim.variable} font-sans pb-2 pl-1`} >
                     Hi, This is

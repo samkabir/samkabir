@@ -3,10 +3,16 @@ import { Box } from '@mui/material'
 import FacebookIcon from '@mui/icons-material/Facebook';
 import GitHubIcon from '@mui/icons-material/GitHub';
 import LinkedInIcon from '@mui/icons-material/LinkedIn';
+import AOS from 'aos';
+import 'aos/dist/aos.css';
+import { useEffect } from 'react';
 
 const SocialMediaLinks = () => {
+    useEffect(() => {
+        AOS.init();
+      }, [])
     return (
-        <div className='hidden md:block'>
+        <div className='hidden md:block' data-aos="fade-down" data-aos-easing="ease-in-out" data-aos-duration="1000" data-aos-delay="50" data-aos-once="true">
             <Box>
                 <ul className='list-none m-0 p-0 fixed overflow-auto bottom-36 left-8'>
                     <li><a className="active" href="https://www.linkedin.com/in/samkabir/"><LinkedInIcon className="text-4xl mb-2 hover:text-[#0072b1] transform transition duration-500 hover:text-[40px]" /></a></li>

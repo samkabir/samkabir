@@ -4,6 +4,9 @@ import { Rubik } from '@next/font/google';
 import FacebookIcon from '@mui/icons-material/Facebook';
 import GitHubIcon from '@mui/icons-material/GitHub';
 import LinkedInIcon from '@mui/icons-material/LinkedIn';
+import AOS from 'aos';
+import 'aos/dist/aos.css';
+import { useEffect } from 'react';
 
 export const rubikFont = Rubik({
     subsets: ['latin'],
@@ -11,8 +14,11 @@ export const rubikFont = Rubik({
 });
 
 const Contact = () => {
+    useEffect(() => {
+        AOS.init();
+      }, [])
     return (
-        <Box className='py-10 mt-10 flex flex-col justify-center items-center mb-8' id='contact'>
+        <Box className='py-10 mt-10 flex flex-col justify-center items-center mb-8' id='contact' data-aos="fade-down" data-aos-easing="ease-in-out" data-aos-duration="1000" data-aos-delay="50" data-aos-once="true">
             <Box className='flex flex-col justify-center items-center'>
                 <Typography variant='subtitle1' className='font-semibold text-[#7a61ff] py-4'>
                     <span className='text-[#7a61ff]'>11. </span> Contact

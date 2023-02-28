@@ -4,6 +4,9 @@ import React, { useEffect, useState } from 'react';
 import { skills } from '../../data/skills';
 import SkillCard from '../SkillCard/SkillCard';
 import Popover from '@mui/material/Popover';
+import AOS from 'aos';
+import 'aos/dist/aos.css';
+
 
 const AboutMe = () => {
     const [data, setData] = useState();
@@ -17,6 +20,9 @@ const AboutMe = () => {
                 setData(data);
             });
     }, [])
+    useEffect(() => {
+        AOS.init();
+      }, [])
 
 
 
@@ -30,7 +36,7 @@ const AboutMe = () => {
 
     const open = Boolean(anchorEl);
     return (
-        <Box className='py-10' id="about">
+        <Box className='py-10' id="about" data-aos="fade-down" data-aos-easing="ease-in-out" data-aos-duration="1000" data-aos-delay="50" data-aos-once="true">
             <Box>
                 <Typography variant='h4' className='font-semibold text-[#d2d2d2]'>
                     <span className='text-[#7a61ff]'>00. </span> About Me
