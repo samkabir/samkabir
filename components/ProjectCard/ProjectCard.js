@@ -12,7 +12,7 @@ export const rubikFont = Rubik({
 const ProjectCard = ({ e }) => {
     
     return (
-        <Box className='bg-[#233352] rounded transform transition duration-500 hover:scale-105 mt-6 md:mt-0'>
+        <Box className='bg-[#233352] rounded transform transition duration-500 hover:scale-105 mt-6 md:mt-0 pb-4 pt-2'>
             <Box className='flex justify-center py-3'>
             <a href={e.liveWebsite} target='_blank'><img src={e.image} alt='project image' className='rounded' width={280} /></a>
             </Box>

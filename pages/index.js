@@ -10,6 +10,7 @@ import DemoProjects from '@/components/DemoProjects/DemoProjects'
 import Contact from '@/components/Contact/Contact'
 import MainComponent from '@/components/Home/MainComponent'
 import { Box } from '@mui/material'
+import Footer from '@/components/Footer/Footer'
 
 
 const inter = Inter({ subsets: ['latin'] })
@@ -26,7 +27,7 @@ export default function Home() {
       <main>
         <Header />
         <SocialMediaLinks />
-        <Box className='px-4 md:px-20 py-8'>
+        <Box className='px-4 md:px-20 py-8 cursor-default'>
           <MainComponent />
           <Box className='px-4 md:px-20'>
             <AboutMe />
@@ -35,6 +36,7 @@ export default function Home() {
             <Contact />
           </Box>
         </Box>
+        <Footer />
       </main>
     </>
   )

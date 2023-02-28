@@ -7,7 +7,6 @@ import { experience } from '../../data/experience';
 import ArrowRightIcon from '@mui/icons-material/ArrowRight';
 
 function TabPanel(props) {
-    console.log(experience);
     const { children, value, index, ...other } = props;
 
     return (
