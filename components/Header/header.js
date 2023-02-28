@@ -11,7 +11,7 @@ const Header = () => {
         <div className="justify-between px-4 mx-auto lg:max-w-7xl md:items-center md:flex md:px-8">
             <div>
                 <div className="flex items-center justify-between py-3 md:py-5 md:block">
-                    <a href="javascript:void(0)">
+                    <a href="/">
                         <Box>
                             <img src='/images/Logo.png' alt='Logo' className='' width="50px" />
                         </Box>
@@ -62,19 +62,19 @@ const Header = () => {
                 >
                     <ul className="items-center justify-center space-y-8 md:flex md:space-x-6 md:space-y-0 font-semibold">
                         <li className="text-gray-600 hover:text-[#7a61ff] my-2">
-                            <a href="javascript:void(0)"><span className='text-[#7a61ff]'>00.</span> About</a>
+                            <a href="#about"><span className='text-[#7a61ff]'>00.</span> About</a>
                         </li>
                         {/* <li className="text-gray-600 hover:text-blue-600">
                             <a href="javascript:void(0)">Blog</a>
                         </li> */}
                         <li className="text-gray-600 hover:text-[#7a61ff] my-2">
-                            <a href="javascript:void(0)"><span className='text-[#7a61ff]'>01.</span> Experience</a>
+                            <a href="#exp"><span className='text-[#7a61ff]'>01.</span> Experience</a>
                         </li>
                         <li className="text-gray-600 hover:text-[#7a61ff] my-2">
-                            <a href="javascript:void(0)"><span className='text-[#7a61ff]'>10.</span> Work</a>
+                            <a href="#project"><span className='text-[#7a61ff]'>10.</span> Work</a>
                         </li>
                         <li className="text-gray-600 hover:text-[#7a61ff] my-2">
-                            <a href="javascript:void(0)"><span className='text-[#7a61ff]'>11.</span> Contact</a>
+                            <a href="#contact"><span className='text-[#7a61ff]'>11.</span> Contact</a>
                         </li>
                     </ul>
                 </div>

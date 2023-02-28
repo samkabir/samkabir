@@ -12,7 +12,7 @@ export const rubikFont = Rubik({
 
 const Contact = () => {
     return (
-        <Box className='py-10 mt-10 flex flex-col justify-center items-center mb-8'>
+        <Box className='py-10 mt-10 flex flex-col justify-center items-center mb-8' id='contact'>
             <Box className='flex flex-col justify-center items-center'>
                 <Typography variant='subtitle1' className='font-semibold text-[#7a61ff] py-4'>
                     <span className='text-[#7a61ff]'>11. </span> Contact

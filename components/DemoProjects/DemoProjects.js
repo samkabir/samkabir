@@ -5,7 +5,7 @@ import ProjectCard from '../ProjectCard/ProjectCard';
 
 const DemoProjects = () => {
     return (
-        <Box className='py-10'>
+        <Box className='py-10' id='project'>
             <Box>
                 <Typography variant='h4' className='font-semibold text-[#d2d2d2]'>
                     <span className='text-[#7a61ff]'>10. </span> Some Projects I worked on...

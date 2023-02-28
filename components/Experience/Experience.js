@@ -19,7 +19,7 @@ function TabPanel(props) {
         >
             {value === index && (
                 <Box sx={{ p: 3 }}>
-                    <Typography>{children}</Typography>
+                    <Box>{children}</Box>
                 </Box>
             )}
         </div>
@@ -46,7 +46,7 @@ const Experience = () => {
         setValue(newValue);
     };
     return (
-        <Box className='py-10 md:h-[500px]'>
+        <Box className='py-10 md:h-[500px]' id='exp'>
             <Box>
                 <Typography variant='h4' className='font-semibold text-[#d2d2d2]'>
                     <span className='text-[#7a61ff]'>01. </span> Job Experiences
@@ -57,27 +57,27 @@ const Experience = () => {
                     sx={{ flexGrow: 1 }}
                     className='md:flex'
                 >
-                   <Box>
-                    {/* for desktop view */}
-                   <Tabs
-                        orientation="vertical"
-                        scrollButtons
-                        allowScrollButtonsMobile
-                        value={value}
-                        variant="scrollable"
-                        onChange={handleChange}
-                        aria-label="Vertical tabs example"
-                        sx={{ borderRight: 2, borderColor: 'divider' }}
-                        className='hidden md:block'
-                    >
-                        {
-                            experience && experience.map((e, i) => (
-                                <Tab label={e.job_position} key={i} className='text-white w-[180px] normal-case font-[600]' {...a11yProps(i)} />
-                            ))
-                        }
-                    </Tabs>
-                   </Box>
-                        {/* For Mobile View */}
+                    <Box>
+                        {/* for desktop view */}
+                        <Tabs
+                            orientation="vertical"
+                            scrollButtons
+                            allowScrollButtonsMobile
+                            value={value}
+                            variant="scrollable"
+                            onChange={handleChange}
+                            aria-label="Vertical tabs example"
+                            sx={{ borderRight: 2, borderColor: 'divider' }}
+                            className='hidden md:block'
+                        >
+                            {
+                                experience && experience.map((e, i) => (
+                                    <Tab label={e.job_position} key={i} className='text-white w-[180px] normal-case font-[600]' {...a11yProps(i)} />
+                                ))
+                            }
+                        </Tabs>
+                    </Box>
+                    {/* For Mobile View */}
                     <Box sx={{ maxWidth: { xs: 320, sm: 480 } }} className='md:hidden border-2 border-black mt-2 rounded'>
                         <Tabs
                             value={value}
@@ -97,30 +97,31 @@ const Experience = () => {
 
                     {
                         experience && experience.map((e, i) => (
-                            <TabPanel value={value} index={i}  key={i} className='md:w-[800px]' >
+                            <TabPanel value={value} index={i} key={i} className='md:w-[800px]' >
                                 <Box>
-                                <Box>
-                                    <Typography variant='subtitle1' className='text-white font-[600]'>
-                                        {e.company_name}
-                                    </Typography>
-                                </Box>
-                                <Box className='pb-2'>
-                                    <Typography variant='subtitle2' className='text-white font-[500] pl-4'>
-                                        {e.timeline}
-                                    </Typography>
-                                </Box>
-                                <Box>
-                                    {e.responsibilities && e.responsibilities.map((e,i) => (
-                                        <Box className='flex pt-2' key={i}>
-                                            <ArrowRightIcon  className='text-white'/>
-                                            <Typography variant='subtitle2' className='text-white' >
-                                                {e}
-                                            </Typography>
-                                        </Box>
-                                    ))}
-                                </Box>
+                                    <Box>
+                                        <Typography variant='subtitle1' className='text-white font-[600]'>
+                                            {e.company_name}
+                                        </Typography>
+                                    </Box>
+                                    <Box className='pb-2'>
+                                        <Typography variant='subtitle2' className='text-white font-[500] pl-4'>
+                                            {e.timeline}
+                                        </Typography>
+                                    </Box>
+                                    <Box>
+                                        {e.responsibilities && e.responsibilities.map((e, i) => (
+                                            <Box className='flex pt-2' key={i}>
+                                                <ArrowRightIcon className='text-white' />
+                                                <Typography variant='subtitle2' className='text-white' >
+                                                    {e}
+                                                </Typography>
+                                            </Box>
+                                        ))}
+                                    </Box>
                                 </Box>
                             </TabPanel>
+
                         ))
                     }
 

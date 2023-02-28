@@ -30,7 +30,7 @@ const AboutMe = () => {
 
     const open = Boolean(anchorEl);
     return (
-        <Box className='py-10'>
+        <Box className='py-10' id="about">
             <Box>
                 <Typography variant='h4' className='font-semibold text-[#d2d2d2]'>
                     <span className='text-[#7a61ff]'>00. </span> About Me
