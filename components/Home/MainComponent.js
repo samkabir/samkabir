@@ -1,12 +1,12 @@
 import { Box, Typography } from '@mui/material';
 import Link from 'next/link';
 import React from 'react';
-import { Itim } from '@next/font/google'
+import { Itim } from '@next/font/google';
 
 const itim = Itim({
-  subsets: ['latin'],
-  weight: '400',
-  variable: '--font-itim',
+    subsets: ['latin'],
+    weight: '400',
+    variable: '--font-itim',
 })
 
 const MainComponent = () => {
@@ -17,13 +17,23 @@ const MainComponent = () => {
                     Hi, This is
                 </Typography>
             </Box>
-            <Box>
+            <Box className='hidden md:block'>
                 <Typography variant='h3' className='pb-1'>
                     Samiul Kabir
                 </Typography>
             </Box>
-            <Box>
-                <Typography variant='h3' className='pb-4 text-[#d8d8d8]'>
+            <Box className='md:hidden'>
+                <Typography variant='h4' className='pb-1'>
+                    Samiul Kabir
+                </Typography>
+            </Box>
+            <Box className='hidden md:block'>
+                <Typography variant='h3' className='pb-4 text-[#d8d8d8] writer-text2'>
+                    I Forge Web Designs for the Digital space.
+                </Typography>
+            </Box>
+            <Box className='md:hidden'>
+                <Typography variant='h4' className='pb-4 text-[#d8d8d8]'>
                     I Forge Web Designs for the Digital space.
                 </Typography>
             </Box>
