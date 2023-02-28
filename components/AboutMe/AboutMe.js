@@ -36,7 +36,7 @@ const AboutMe = () => {
                     <span className='text-[#7a61ff]'>00. </span> About Me
                 </Typography>
             </Box>
-            <Box className='grid grid-cols-2 gap-4 text-[#d2d2d2]'>
+            <Box className='md:grid md:grid-cols-2 gap-4 text-[#d2d2d2]'>
                 <Box>
                     <Typography variant='subtitle1' className='pt-6'>
                         To pursue a challenging and rewarding career as a Software Engineer, utilizing my expertise in software
@@ -59,7 +59,7 @@ const AboutMe = () => {
                         </ul>
                     </Box>
                 </Box>
-                <Box className='flex justify-center items-center'>
+                <Box className='flex justify-center items-center mt-8 md:mt-0'>
                     <Box className='transform transition duration-500 border-4 border-[#7a61ff] hover:border-[#fff] p-3 rounded '>
                         <img src='/images/ProfilePicture.jpg' alt='ProfilePicture' className='rounded' width={300} />
                     </Box>

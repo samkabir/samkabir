@@ -11,7 +11,7 @@ const DemoProjects = () => {
                     <span className='text-[#7a61ff]'>10. </span> Some Projects I worked on...
                 </Typography>
             </Box>
-            <Box className='grid grid-cols-3 gap-4 mt-8'>
+            <Box className='md:grid md:grid-cols-3 gap-4 mt-8'>
                 {
                     projects && projects.map((e, i) => (
                         <ProjectCard key={i} e={e} />
