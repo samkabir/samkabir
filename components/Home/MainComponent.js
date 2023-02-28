@@ -11,7 +11,7 @@ const itim = Itim({
 
 const MainComponent = () => {
     return (
-        <div className='my-10 mx-10 text-white'>
+        <div className='my-10 mx-10 text-white md:h-[400px]'>
             <Box>
                 <Typography variant='h6' className={`${itim.variable} font-sans pb-2 pl-1`} >
                     Hi, This is
