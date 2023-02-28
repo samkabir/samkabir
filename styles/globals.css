@@ -52,6 +52,7 @@
   border-right: 2px solid #d8d8d8;
   box-sizing: border-box;
 }
+
 @keyframes typing2 {
   from {
     width: 0%
@@ -61,6 +62,7 @@
     width: 80%
   }
 }
+
 @keyframes blink2 {
 
   from,
@@ -70,6 +72,34 @@
 
   50% {
     border-color: #d8d8d8;
+  }
+}
+
+.item {
+  z-index: 100;
+  padding: 5px;
+}
+
+
+.circle {
+  border-radius: 50%;
+  background-color: deepskyblue;
+  width: 150px;
+  height: 150px;
+  position: absolute;
+  opacity: 0;
+  animation: scaleIn 4s infinite cubic-bezier(.36, .11, .89, .32);
+}
+
+@keyframes scaleIn {
+  from {
+    transform: scale(.5, .5);
+    opacity: .5;
+  }
+
+  to {
+    transform: scale(2.5, 2.5);
+    opacity: 0;
   }
 }
 

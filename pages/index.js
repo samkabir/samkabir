@@ -11,13 +11,23 @@ import Contact from '@/components/Contact/Contact'
 import MainComponent from '@/components/Home/MainComponent'
 import { Box } from '@mui/material'
 import Footer from '@/components/Footer/Footer'
+import { useEffect, useState } from 'react'
+import Loading from '@/components/Loading/Loading'
+
 
 
 
 const inter = Inter({ subsets: ['latin'] })
 
 export default function Home() {
-  
+  // For Animation
+  // https://github.com/michalsnik/aos#animations
+
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    setLoading(false);
+  }, []);
   return (
     <>
       <Head>
@@ -26,20 +36,26 @@ export default function Home() {
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link rel="icon" href="/images/Logo.png" />
       </Head>
-      <main>
-        <Header />
-        <SocialMediaLinks />
-        <Box className='px-4 md:px-20 py-8 cursor-default'>
-          <MainComponent />
-          <Box className='px-4 md:px-20'>
-            <AboutMe />
-            <Experience />
-            <DemoProjects />
-            <Contact />
-          </Box>
-        </Box>
-        <Footer />
-      </main>
+
+      {
+        loading ?
+          <Loading />
+          :
+          <main>
+            <Header />
+            <SocialMediaLinks />
+            <Box className='px-4 md:px-20 py-8 cursor-default'>
+              <MainComponent />
+              <Box className='px-4 md:px-20'>
+                <AboutMe />
+                <Experience />
+                <DemoProjects />
+                <Contact />
+              </Box>
+            </Box>
+            <Footer />
+          </main>
+      }
     </>
   )
 }
