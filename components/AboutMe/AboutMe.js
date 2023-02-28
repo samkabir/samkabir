@@ -61,7 +61,7 @@ const AboutMe = () => {
                 </Box>
                 <Box className='flex justify-center items-center mt-8 md:mt-0'>
                     <Box className='transform transition duration-500 border-4 border-[#7a61ff] hover:border-[#fff] p-3 rounded '>
-                        <img src='/images/ProfilePicture.jpg' alt='ProfilePicture' className='rounded' width={300} />
+                        <img src='/images/pic.webp' alt='ProfilePicture' className='rounded' width={300} />
                     </Box>
                 </Box>
             </Box>
