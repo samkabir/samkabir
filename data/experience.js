@@ -20,7 +20,7 @@ export const experience = [
         tag:'Three',
         job_position:'Internship',
         company_name:'BhaloVentures Limited - Bhalogari.com',
-        timeline:'November 2022 – January 2022',
+        timeline:'November 2021 – January 2022',
         responsibilities:['Learn and be familiar the Front and Back End codebase. ', 'Minor bugfixes. - Minor CSS fixes and implementations. ', ' DRF API, EMI Calculator. ', 'Git', 'Sample React-Redux Projects (React JS).'],
     },
 ]
