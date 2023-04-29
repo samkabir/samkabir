@@ -82,7 +82,7 @@ export const projects = [
     },
     {
         id:8,
-        image:'/images/projects/mache/1.PNG',
+        image:'/images/projects/Mache/1.PNG',
         name: 'Mache Static Landing Page',
         github:'https://github.com/samkabir/Mache-Bootstrap',
         liveWebsite: 'https://samkabir.github.io/Mache-Bootstrap/',
