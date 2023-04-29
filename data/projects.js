@@ -55,7 +55,7 @@ export const projects = [
     },
     {
         id:6,
-        image:'/images/projects/honestelite/1.png',
+        image:'/images/projects/honestelite/1.PNG',
         name: 'Honest Elite',
         github:'https://github.com/samkabir/NextjsProject',
         liveWebsite: 'https://nextjs-project-samkabir.vercel.app/home',
@@ -64,7 +64,7 @@ export const projects = [
     },
     {
         id:17,
-        image:'/images/projects/foodnetwork/1.png',
+        image:'/images/projects/foodnetwork/1.PNG',
         name: 'Food Network Static Page',
         github:'https://github.com/samkabir/Simple-HTML-CSS-Food-Network-Page',
         liveWebsite: 'https://samkabir.github.io/Simple-HTML-CSS-Food-Network-Page/',
@@ -73,7 +73,7 @@ export const projects = [
     },
     {
         id:7,
-        image:'/images/projects/music/1.png',
+        image:'/images/projects/music/1.PNG',
         name: 'Music Static Landing Page',
         github:'https://github.com/samkabir/Music-Bootstrap',
         liveWebsite: 'https://samkabir.github.io/Music-Bootstrap/',
@@ -82,7 +82,7 @@ export const projects = [
     },
     {
         id:8,
-        image:'/images/projects/mache/1.png',
+        image:'/images/projects/mache/1.PNG',
         name: 'Mache Static Landing Page',
         github:'https://github.com/samkabir/Mache-Bootstrap',
         liveWebsite: 'https://samkabir.github.io/Mache-Bootstrap/',
@@ -91,7 +91,7 @@ export const projects = [
     },
     {
         id:9,
-        image:'/images/projects/loginpage/1.png',
+        image:'/images/projects/loginpage/1.PNG',
         name: 'Simple Static Login Page',
         github:'https://github.com/samkabir/Login-Page',
         liveWebsite: 'https://samkabir.github.io/Login-Page/',
@@ -100,7 +100,7 @@ export const projects = [
     },
     {
         id:10,
-        image:'/images/projects/itechsoft/1.png',
+        image:'/images/projects/itechsoft/1.PNG',
         name: 'Quiz Scoring Site',
         github:'https://github.com/samkabir/itechsoft',
         liveWebsite: 'https://itechsoft.vercel.app/',
@@ -109,7 +109,7 @@ export const projects = [
     },
     {
         id:11,
-        image:'/images/projects/openlibrary/1.png',
+        image:'/images/projects/openlibrary/1.PNG',
         name: 'Open Library Search Page',
         github:'https://github.com/samkabir/JS-API-Book-Archive',
         liveWebsite: 'https://samkabir-openlibrary-apijs.netlify.app/',
@@ -118,7 +118,7 @@ export const projects = [
     },
     {
         id:12,
-        image:'/images/projects/fakestore/1.png',
+        image:'/images/projects/fakestore/1.PNG',
         name: 'FakeStore Using Rest API',
         github:'https://github.com/samkabir/JS-Debugging-Ranga-Store',
         liveWebsite: 'https://samkabir-fakestore-api.netlify.app/',
@@ -127,7 +127,7 @@ export const projects = [
     },
     {
         id:13,
-        image:'/images/projects/talkshow/1.png',
+        image:'/images/projects/talkshow/1.PNG',
         name: 'TalkShow Event Using Context API',
         github:'https://github.com/samkabir/React-JS-Talk-Show-Event',
         liveWebsite: 'https://samkabir-react-spa-talkshowevent.netlify.app/',
@@ -136,7 +136,7 @@ export const projects = [
     },
     {
         id:14,
-        image:'/images/projects/mathacademy/1.png',
+        image:'/images/projects/mathacademy/1.PNG',
         name: 'Static Math Academy',
         github:'https://github.com/samkabir/React-JS-Router-Math-Academy',
         liveWebsite: 'https://samkabir-react-mathacademy.netlify.app/',
@@ -145,7 +145,7 @@ export const projects = [
     },
     {
         id:15,
-        image:'/images/projects/honda/1.png',
+        image:'/images/projects/honda/1.PNG',
         name: 'Honda CBR BootStrap',
         github:'https://github.com/samkabir/Simple-Honda-CBR-Bootstrap',
         liveWebsite: 'https://samkabir.github.io/Simple-Honda-CBR-Bootstrap/',
@@ -154,7 +154,7 @@ export const projects = [
     },
     {
         id:16,
-        image:'/images/projects/football/1.png',
+        image:'/images/projects/football/1.PNG',
         name: 'Responsive Football Static Page',
         github:'https://github.com/samkabir/Responsive-Football',
         liveWebsite: 'https://samkabir.github.io/Responsive-Football/index.html',
