@@ -10,7 +10,7 @@ export const projects = [
     },
     {
         id:3,
-        image:'/images/projects/gamblingcoin/1.png',
+        image:'/images/projects/gamblingcoin/1.PNG',
         name: 'Gambling Coin',
         github:'https://github.com/samkabir/Simple-React-App',
         liveWebsite: 'https://gamblingcoin.vercel.app/',
@@ -19,7 +19,7 @@ export const projects = [
     },
     {
         id:4,
-        image:'/images/projects/casinohubs/1.png',
+        image:'/images/projects/casinohubs/1.PNG',
         name: 'Casino Hubs',
         github:'https://github.com/samkabir/Casinothree',
         liveWebsite: 'https://www.casinohubs.online/',
@@ -46,7 +46,7 @@ export const projects = [
     },
     {
         id:5,
-        image:'/images/projects/barikoi/1.png',
+        image:'/images/projects/barikoi/1.PNG',
         name: 'BariKoi Map Search Page',
         github:'https://github.com/samkabir/barikoi',
         liveWebsite: 'https://barikoi.vercel.app/',
