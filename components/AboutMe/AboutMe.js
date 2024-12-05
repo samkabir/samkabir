@@ -45,10 +45,9 @@ const AboutMe = () => {
             <Box className='md:grid md:grid-cols-2 gap-4 text-[#d2d2d2]'>
                 <Box>
                     <Typography variant='subtitle1' className='pt-6'>
-                        To pursue a challenging and rewarding career as a Software Engineer, utilizing my expertise in software
-                        design and development, to contribute to the success of a dynamic organization by delivering innovative and
-                        high-quality software solutions that meet the evolving needs of the business and its customers. Committed to
-                        continuously learning and staying updated with the latest technologies and industry trends to deliver cutting edge software solutions
+                    To secure a challenging position as a Frontend Engineer where I can utilize my expertise in building
+                    scalable, high-quality web applications, while leveraging my proficiency in React, Next.js, and software
+                    development to contribute to innovative and impactful solutions.
                     </Typography>
                     <Box className='md:pl-4'>
                         <ul className='list-disc'>

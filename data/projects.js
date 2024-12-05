@@ -1,6 +1,15 @@
 export const projects = [
     {
         id:0,
+        image:'/images/projects/CasinoBlogs/2.webp',
+        name: 'CasinoBlogs',
+        github:'https://github.com/samkabir/CasinoFive',
+        liveWebsite: 'https://casino-five-one.vercel.app/',
+        description: 'This is a Live Project that has been deployed. *Due to NDA, github repo has been made private, but can be made public upon request.',
+        stacks: ['Next JS',  'Material UI', 'Tailwind', 'React Router']
+    },
+    {
+        id:1,
         image:'/images/projects/project1/1.webp',
         name: 'Shades Sunglases',
         github:'https://github.com/samkabir/Shades-Sunglasses-ReactJS-Client-Side',
