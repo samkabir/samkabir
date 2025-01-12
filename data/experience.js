@@ -1,35 +1,11 @@
 export const experience = [
     {
-        id:0,
-        tag:'One',
-        job_position:'Senior Frontend Engineer',
-        company_name:'A Food Delivery Startup',
-        timeline:'July 2024 – September 2024',
-        responsibilities:['Spearheaded frontend development for user, merchant, and admin dashboards.', 'Delivered critical features, including user authentication, dashboard analytics, and merchant management tools using React.js and Next.js.', 'Collaborated with cross-functional teams to design scalable architectures and ensure timely delivery of features.', 'Enhanced communication skills by working directly with stakeholders to prioritize and refine deliverables'],
-    },
-    {
         id:1,
         tag:'Two',
         job_position:'Software Engineer',
         company_name:'Queries AI',
         timeline:'May 2023 – June 2024',
-        responsibilities:['Designed and developed 7 blog websites with multiple routes to support SEO strategies, using React (2 projects) and Next JS (5 projects).','Implemented modern responsive designs, optimized for performance and search engine visibility(SSR).', 'Collaborated with clients to refine requirements, ensuring seamless integration of SEO practices with functional designs.', 'Gained expertise in building scalable, maintainable front-end architectures while managing multiple projects simultaneously.'],
-    },
-    {
-        id:2,
-        tag:'Three',
-        job_position:'Frontend Developer',
-        company_name:'European Online Casino Company',
-        timeline:'January 2022 – October 2024',
         responsibilities:['Developed and maintained key features for SaaS applications using React JS.','Maintain and develop various features of SaaS and Admin frontend repository.', 'Develop and maintain a documents generator repository (JSON to PDF/CSV).', 'Work on product features and various microservices of SaaS application.'],
-    },
-    {
-        id:3,
-        tag:'Four',
-        job_position:'Frontend Developer',
-        company_name:'European Online Casino Company',
-        timeline:'May 2023 – June 2024',
-        responsibilities:['Designed and developed 7 blog websites with multiple routes to support SEO strategies, using React (2 projects) and Next JS (5 projects).', 'Implemented modern responsive designs, optimized for performance and search engine visibility (SSR).', 'Collaborated with clients to refine requirements, ensuring seamless integration of SEO practices with functional designs.', 'Gained expertise in building scalable, maintainable front-end architectures while managing multiple projects simultaneously.'],
     },
     {
         id:4,
@@ -37,7 +13,7 @@ export const experience = [
         job_position:'Manual Tester / QA Engineer',
         company_name:'Stealth US Digital Health Company',
         timeline:'October 2022 – April 2023',
-        responsibilities:['Collaborated with developers and product teams to ensure a polished user interface (UI) and seamless user experience (UX)','The company uses novel technologies (like computer vision) to increase access to quality healthcare in the US. It is backed by leading tech angel investors and healthcare VCs.', 'Conducted user acceptance testing to make sure that the application meets functional and compliance needs. Found X bugs and was instrumental in final tests to prepare for product launch.', 'Conducted user acceptance testing to make sure that the application meets functional and compliance needs. Found X bugs and was instrumental in final tests to prepare for product launch.', ' Collaborated with the product team, including the CEO, and developers daily to ensure requirements were being met.', 'Documented, tracked and reproduced bugs / defects as needed as well as creating reports and steps to reproduce', 'Met all project deadlines and directly worked with CEO to provide guidance on UX and future design considerations', 'Reference call with CEO or developers available upon request.'],
+        responsibilities:['Collaborated with developers and product teams to ensure a polished user interface (UI) and seamless user experience (UX).','Conducted rigorous testing to identify and resolve critical bugs, enhancing the overall functionality of web applications.', 'Provided actionable feedback on UI/UX design and frontend workflows to improve user engagement.', 'Documented detailed test cases and debugging processes, strengthening problem-solving and attention-to-detail skills.', ' Collaborated with the product team, including the CEO, and developers daily to ensure requirements were being met.', 'Gained hands-on experience with end-to-end testing protocols, enhancing the ability to debug andoptimize frontend applications.'],
     },
     {
         id:5,
@@ -45,7 +21,7 @@ export const experience = [
         job_position:'Junior Software Engineer',
         company_name:'BhaloVentures Limited - Bhalogari.com',
         timeline:'February 2022 – September 2022',
-        responsibilities:['Search AutoComplete, Bangladesh Map Search implementation, Car Compare, Dynamic Search Page (React JS) ', 'Admin DashBoard, Profile page, Edit Profile Page. (Next JS) ', 'Bug fixes.'],
+        responsibilities:['Implemented dynamic features like Bangladesh Map Search, Search AutoComplete, and Car Comparison Pages using React and Next.js.', 'Designed and developed dashboards for users and merchants, along with profile editing modules.', 'Performed bug fixes and optimized performance for various applications.'],
     },
     {
         id:6,
@@ -53,6 +29,6 @@ export const experience = [
         job_position:'Internship',
         company_name:'BhaloVentures Limited - Bhalogari.com',
         timeline:'November 2021 – January 2022',
-        responsibilities:['Learn and be familiar the Front and Back End codebase.', 'Minor bugfixes. - Minor CSS fixes and implementations.', 'DRF API, EMI Calculator.', 'Git', 'Sample React-Redux Projects (React JS).'],
+        responsibilities:['Contributed to back-end API development using Django Rest Framework (DRF) and integrated EMI calculators', 'Fixed minor bugs and refined CSS for responsive design.'],
     },
 ]

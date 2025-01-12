@@ -13,6 +13,7 @@ import { Box } from '@mui/material'
 import Footer from '@/components/Footer/Footer'
 import { useEffect, useState } from 'react'
 import Loading from '@/components/Loading/Loading'
+import ContractualExperiences from '@/components/ContractualExperiences/ContractualExperiences'
 
 
 
@@ -49,6 +50,7 @@ export default function Home() {
               <Box className='px-4 md:px-20'>
                 <AboutMe />
                 <Experience />
+                <ContractualExperiences />
                 <DemoProjects />
                 <Contact />
               </Box>
