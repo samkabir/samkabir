@@ -1,13 +1,13 @@
 export const projects = [
-    {
-        id:0,
-        image:'/images/projects/CasinoBlogs/2.webp',
-        name: 'CasinoBlogs',
-        github:'https://github.com/samkabir/CasinoFive',
-        liveWebsite: 'https://casino-five-one.vercel.app/',
-        description: 'This is a Live Project that has been deployed. *Due to NDA, github repo has been made private, but can be made public upon request.',
-        stacks: ['Next JS',  'Material UI', 'Tailwind', 'React Router']
-    },
+    // {
+    //     id:0,
+    //     image:'/images/projects/CasinoBlogs/2.webp',
+    //     name: 'CasinoBlogs',
+    //     github:'https://github.com/samkabir/CasinoFive',
+    //     liveWebsite: 'https://casino-five-one.vercel.app/',
+    //     description: 'This is a Live Project that has been deployed. *Due to NDA, github repo has been made private, but can be made public upon request.',
+    //     stacks: ['Next JS',  'Material UI', 'Tailwind', 'React Router']
+    // },
     {
         id:1,
         image:'/images/projects/project1/1.webp',
@@ -17,24 +17,24 @@ export const projects = [
         description: 'This Website has 45 Routes, 1 home, 2 private, 1 login, 1 detail(for each product). Purchase and DashBoard and its sub Routes are Private. DashBoard has Two type of access, one is User level access and one is admin level access. ',
         stacks: ['React JS', 'Node JS', 'Mongo DB', 'Express JS', 'Material UI', 'Bootstrap', 'React Router']
     },
-    {
-        id:3,
-        image:'/images/projects/gamblingcoin/1.PNG',
-        name: 'Gambling Coin',
-        github:'https://github.com/samkabir/Simple-React-App',
-        liveWebsite: 'https://gamblingcoin.vercel.app/',
-        description: 'This is a Live Project that has been deployed. *Due to NDA, github repo has been made private, but can be made public upon request.',
-        stacks: ['Next JS',  'Material UI', 'Tailwind', 'React Router']
-    },
-    {
-        id:4,
-        image:'/images/projects/casinohubs/1.PNG',
-        name: 'Casino Hubs',
-        github:'https://github.com/samkabir/Casinothree',
-        liveWebsite: 'https://www.casinohubs.online/',
-        description: 'This is a Live Project that has been deployed. *Due to NDA, github repo has been made private, but can be made public upon request.',
-        stacks: ['Next JS',  'Material UI', 'Tailwind', 'React Router']
-    },
+    // {
+    //     id:3,
+    //     image:'/images/projects/gamblingcoin/1.PNG',
+    //     name: 'Gambling Coin',
+    //     github:'https://github.com/samkabir/Simple-React-App',
+    //     liveWebsite: 'https://gamblingcoin.vercel.app/',
+    //     description: 'This is a Live Project that has been deployed. *Due to NDA, github repo has been made private, but can be made public upon request.',
+    //     stacks: ['Next JS',  'Material UI', 'Tailwind', 'React Router']
+    // },
+    // {
+    //     id:4,
+    //     image:'/images/projects/casinohubs/1.PNG',
+    //     name: 'Casino Hubs',
+    //     github:'https://github.com/samkabir/Casinothree',
+    //     liveWebsite: 'https://www.casinohubs.online/',
+    //     description: 'This is a Live Project that has been deployed. *Due to NDA, github repo has been made private, but can be made public upon request.',
+    //     stacks: ['Next JS',  'Material UI', 'Tailwind', 'React Router']
+    // },
     {
         id:1,
         image:'/images/projects/project2/1.webp',
