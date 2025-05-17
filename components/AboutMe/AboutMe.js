@@ -64,11 +64,11 @@ const AboutMe = () => {
                         </ul>
                     </Box>
                 </Box>
-                <Box className='flex justify-center items-center mt-8 md:mt-0'>
+                {/* <Box className='flex justify-center items-center mt-8 md:mt-0'>
                     <Box className='transform transition duration-500 border-4 border-[#7a61ff] hover:border-[#fff] p-3 rounded '>
                         <img src='/images/pic.webp' alt='ProfilePicture' className='rounded' width={300} />
                     </Box>
-                </Box>
+                </Box> */}
             </Box>
             <Box>
                 <Typography variant='h5' className='font-semibold text-[#d2d2d2] pt-10 pb-6'>
