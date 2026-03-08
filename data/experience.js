@@ -1,4 +1,18 @@
 export const experience = [
+
+    {
+        id:0,
+        tag:'One',
+        job_position:'Software Engineer (Frontend Focused)',
+        company_name:'Zavisoft Limited, Concern of Steadfast Limited',
+        timeline:'July 2025 - Present',
+        responsibilities:[
+            'Developed and maintained two major repositories: Packly Marketplace and Merchant IMS, ensuring high performance, scalability, and code quality.',
+            'Built and delivered two additional frontend products: Packly Car Rental Marketplace and Merchant Panel, managing development from implementation to deployment.',
+            'Led and mentored two junior frontend developers and interns, coordinating tasks and ensuring timely delivery of project milestones.',
+            'Collaborated closely with backend developers, designers, and product stakeholders to implement features and enhance overall user experience.',
+        ],
+    },
     {
         id:1,
         tag:'Two',
