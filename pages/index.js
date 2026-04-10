@@ -1,7 +1,4 @@
 import Head from 'next/head'
-import Image from 'next/image'
-import { Inter } from '@next/font/google'
-import styles from '@/styles/Home.module.css'
 import Header from '@/components/Header/header'
 import SocialMediaLinks from '@/components/SocialMediaLinks/SocialMediaLinks'
 import AboutMe from '@/components/AboutMe/AboutMe'
@@ -14,11 +11,6 @@ import Footer from '@/components/Footer/Footer'
 import { useEffect, useState } from 'react'
 import Loading from '@/components/Loading/Loading'
 import ContractualExperiences from '@/components/ContractualExperiences/ContractualExperiences'
-
-
-
-
-const inter = Inter({ subsets: ['latin'] })
 
 export default function Home() {
   // For Animation

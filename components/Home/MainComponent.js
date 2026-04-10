@@ -1,7 +1,5 @@
 import { Box, Typography } from '@mui/material';
-import Link from 'next/link';
-import React from 'react';
-import { Itim } from '@next/font/google';
+import { Itim } from 'next/font/google';
 import AOS from 'aos';
 import 'aos/dist/aos.css';
 import { useEffect } from 'react';
@@ -54,9 +52,14 @@ const MainComponent = () => {
                     target="_blank"
                     rel="noopener noreferrer"
                 >Download FIle</a> */}
-                <Link href="/assets/Samiul_Kabir_Resume.pdf">
-                    <button className='transform transition duration-500 border-2 border-[#7a61ff] py-2 px-6 my-4 font-semibold text-[#7a61ff] hover:text-[#000] hover:bg-[#7a61ff]'>Resume</button>
-                </Link>
+                <a
+                    href="/assets/Samiul_Kabir_Resume.pdf"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-block transform transition duration-500 border-2 border-[#7a61ff] py-2 px-6 my-4 font-semibold text-[#7a61ff] hover:text-[#000] hover:bg-[#7a61ff]"
+                >
+                    Resume
+                </a>
             </Box>
         </div>
     );

@@ -1,6 +1,5 @@
 import { Box } from '@mui/material';
-import React from 'react';
-import { Rubik } from '@next/font/google';
+import { Rubik } from 'next/font/google';
 
 export const rubikFont = Rubik({
     subsets: ['latin'],
@@ -14,7 +13,7 @@ const Footer = () => {
                 Designed & Built By Samiul Kabir
             </Box>
             <Box className={`text-[#d2d2d2] text-xs cursor-default ${rubikFont.className}`}>
-                Web Design Idea - <a href='https://brittanychiang.com/' targer='_blank' className='pointer text-[#64ffda]'>Brittany Chiang</a>
+                Web Design Idea - <a href="https://brittanychiang.com/" target="_blank" rel="noreferrer" className="pointer text-[#64ffda]">Brittany Chiang</a>
             </Box>
         </Box>
     );

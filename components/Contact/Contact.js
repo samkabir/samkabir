@@ -1,6 +1,5 @@
-import React from 'react';
-import { Box, Button, Typography } from '@mui/material';
-import { Rubik } from '@next/font/google';
+import { Box, Typography } from '@mui/material';
+import { Rubik } from 'next/font/google';
 import FacebookIcon from '@mui/icons-material/Facebook';
 import GitHubIcon from '@mui/icons-material/GitHub';
 import LinkedInIcon from '@mui/icons-material/LinkedIn';
@@ -35,15 +34,15 @@ const Contact = () => {
                     Feel free to contact me anytime.
                 </Typography>
                 <Box className={`flex justify-center my-12 ${rubikFont.className}`}>
-                    <button href="mailto:admin@gamblingco.in" className='transform transition duration-500 border-2 border-[#7a61ff] py-2 px-6 my-4 font-semibold text-[#7a61ff] hover:text-[#000] hover:bg-[#7a61ff] normal-case'>
+                    <a href="mailto:admin@gamblingco.in" className='transform transition duration-500 border-2 border-[#7a61ff] py-2 px-6 my-4 font-semibold text-[#7a61ff] hover:text-[#000] hover:bg-[#7a61ff] normal-case'>
                         Say Hello
-                    </button>
+                    </a>
                 </Box>
                 <Box className='md:hidden'>
                     <ul className='list-none flex justify-center'>
-                        <li><a className="active" href="https://www.linkedin.com/in/samkabir/"><LinkedInIcon className="text-4xl mx-4 mb-2 text-[#0072b1]" /></a></li>
-                        <li><a className="active" href="https://github.com/samkabir"><GitHubIcon className="text-4xl mx-4 mb-2 text-[#171515] " /></a></li>
-                        <li><a className="active" href="https://www.facebook.com/fahim.kabir.5/"><FacebookIcon className="text-4xl mx-4 mb-4 text-[#3b5998]" /></a></li>
+                        <li><a className="active" href="https://www.linkedin.com/in/samkabir/" target="_blank" rel="noreferrer"><LinkedInIcon className="text-4xl mx-4 mb-2 text-[#0072b1]" /></a></li>
+                        <li><a className="active" href="https://github.com/samkabir" target="_blank" rel="noreferrer"><GitHubIcon className="text-4xl mx-4 mb-2 text-[#171515] " /></a></li>
+                        <li><a className="active" href="https://www.facebook.com/fahim.kabir.5/" target="_blank" rel="noreferrer"><FacebookIcon className="text-4xl mx-4 mb-4 text-[#3b5998]" /></a></li>
                     </ul>
                 </Box>
             </Box>

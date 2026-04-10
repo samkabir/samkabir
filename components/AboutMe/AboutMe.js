@@ -1,6 +1,5 @@
 import { Box, Typography } from '@mui/material';
-import Link from 'next/link';
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { skills } from '../../data/skills';
 import SkillCard from '../SkillCard/SkillCard';
 import Popover from '@mui/material/Popover';
@@ -114,11 +113,11 @@ const AboutMe = () => {
                         <Typography sx={{ p: 1 }}>It ain't much, but it's honest work. Click on the number and View my LeetCode Profile.</Typography>
                     </Popover>
                 </Box>
-                <Link href='https://leetcode.com/Greeed/' target='_blank'>
+                <a href="https://leetcode.com/Greeed/" target="_blank" rel="noreferrer">
                     <Box className='border-4 border-[#fff] rounded-full w-min py-2 px-3 text-[#7a61ff] font-semibold text-xl hover:border-[#7a61ff] hover:text-[#7a61ff] cursor-pointer transform transition duration-500'>
                         {data && data.totalSolved}
                     </Box>
-                </Link>
+                </a>
             </Box>
 
 

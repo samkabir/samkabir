@@ -1,10 +1,7 @@
 import { Box } from '@mui/material';
-import Link from 'next/link';
-import React from 'react';
-import { useState } from "react";
+import { useEffect, useState } from 'react';
 import AOS from 'aos';
 import 'aos/dist/aos.css';
-import { useEffect } from 'react';
 
 const Header = () => {
     const [navbar, setNavbar] = useState(false);

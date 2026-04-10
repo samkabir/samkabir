@@ -1,5 +1,5 @@
 import { Box, Typography } from '@mui/material';
-import React from 'react';
+import { useEffect, useState } from 'react';
 import PropTypes from 'prop-types';
 import Tabs from '@mui/material/Tabs';
 import Tab from '@mui/material/Tab';
@@ -7,7 +7,6 @@ import { experience } from '../../data/experience';
 import ArrowRightIcon from '@mui/icons-material/ArrowRight';
 import AOS from 'aos';
 import 'aos/dist/aos.css';
-import { useEffect } from 'react';
 
 function TabPanel(props) {
     const { children, value, index, ...other } = props;
@@ -43,7 +42,7 @@ function a11yProps(index) {
 }
 
 const Experience = () => {
-    const [value, setValue] = React.useState(0);
+    const [value, setValue] = useState(0);
 
     useEffect(() => {
         AOS.init();
