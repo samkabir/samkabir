@@ -1,10 +1,9 @@
-import React, { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Box, Typography } from '@mui/material';
 import { projects } from '../../data/projects';
 import ProjectCard from '../ProjectCard/ProjectCard';
 import AOS from 'aos';
 import 'aos/dist/aos.css';
-import { useEffect } from 'react';
 
 const DemoProjects = () => {
     useEffect(() => {

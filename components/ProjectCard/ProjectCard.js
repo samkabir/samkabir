@@ -1,8 +1,7 @@
 import { Box, Typography } from '@mui/material';
-import React from 'react';
 import GitHubIcon from '@mui/icons-material/GitHub';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
-import { Rubik } from '@next/font/google';
+import { Rubik } from 'next/font/google';
 
 export const rubikFont = Rubik({
     subsets: ['latin'],
@@ -14,7 +13,9 @@ const ProjectCard = ({ e }) => {
     return (
         <Box className='bg-[#233352] rounded transform transition duration-500 hover:scale-105 mt-6 md:mt-0 pb-4 pt-2'>
             <Box className='flex justify-center py-3'>
-            <a href={e.liveWebsite} target='_blank'><img src={e.image} alt='project image' className='rounded' width={280} /></a>
+            <a href={e.liveWebsite} target="_blank" rel="noreferrer">
+                <img src={e.image} alt="project image" className="rounded" width={280} />
+            </a>
             </Box>
             <Box className='px-5 py-2'>
                 <Box className='flex justify-between'>
@@ -25,8 +26,12 @@ const ProjectCard = ({ e }) => {
                         </Typography>
                     </Box>
                     <Box className=''>
-                        <a href={e.github} target='_blank' ><GitHubIcon className='text-[#d6d6d6] hover:text-[#7a61ff] text-3xl mr-2 transform transition duration-500' /></a>
-                        <a href={e.liveWebsite} target='_blank' ><OpenInNewIcon className='text-[#d6d6d6] hover:text-[#7a61ff] text-3xl mr-2 transform transition duration-500' /></a>
+                        <a href={e.github} target="_blank" rel="noreferrer">
+                            <GitHubIcon className="text-[#d6d6d6] hover:text-[#7a61ff] text-3xl mr-2 transform transition duration-500" />
+                        </a>
+                        <a href={e.liveWebsite} target="_blank" rel="noreferrer">
+                            <OpenInNewIcon className="text-[#d6d6d6] hover:text-[#7a61ff] text-3xl mr-2 transform transition duration-500" />
+                        </a>
                     </Box>
                 </Box>
                 <Box>
