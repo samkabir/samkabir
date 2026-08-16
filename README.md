@@ -65,42 +65,11 @@ const samiul = {
 
 ---
 
-## 💼 Experience
-
-| Role | Company | Timeline |
-| :--- | :--- | :--- |
-| **Software Engineer** (Frontend Focused) | Zavisoft Limited — Concern of Steadfast Group | Jul 2025 – Present |
-| **Senior Frontend Engineer** *(Contract · NDA)* | Food Delivery Startup | Jul 2024 – Sep 2024 |
-| **Frontend Developer** *(Contract · NDA)* | Online Casino Company | May 2023 – Jun 2024 |
-| **Software Engineer** | Queries AI | May 2023 – Jun 2024 |
-| **Manual Tester / QA Engineer** | Stealth US Digital Health Company | Oct 2022 – Apr 2023 |
-| **Junior Software Engineer** | BhaloVentures Ltd — Bhalogari.com | Feb 2022 – Sep 2022 |
-| **Intern** | BhaloVentures Ltd — Bhalogari.com | Nov 2021 – Jan 2022 |
-
-> 🔧 Highlights: shipped **Packly Marketplace**, **Merchant IMS**, **Car Rental Marketplace** & **Merchant Panel** at Zavisoft; built 7 SEO-optimized blog sites; delivered user/merchant/admin dashboards; mentored junior devs.
-
----
-
-## 🚀 Featured Projects
-
-| Project | Stack | Links |
-| :--- | :--- | :--- |
-| **Shades Sunglasses** — 45-route MERN store with user/admin dashboards | React · Node · MongoDB · Express · MUI | [Live](https://shades-sunglasses.web.app/) · [Code](https://github.com/samkabir/Shades-Sunglasses-ReactJS-Client-Side) |
-| **Evanto Tourism** — Tour booking app with Google Sign-In | React · Node · MongoDB · Express · Tailwind | [Live](https://assignment11-tourism-react.web.app/) · [Code](https://github.com/samkabir/React-JS-Tourism-Client-Side) |
-| **Optima Diagnostic** — Diagnostic center with dual auth | React · Node · MUI · Bootstrap | [Live](https://assignment10-doctors-react.web.app/) · [Code](https://github.com/samkabir/React-JS-Front-End-Optima-Diagonostic-Center) |
-| **BariKoi Map Search** — Interactive map search page | Next.js · React-Map-GL · MUI · Tailwind | [Live](https://barikoi.vercel.app/) · [Code](https://github.com/samkabir/barikoi) |
-| **Open Library Search** — Book archive via REST API | React · REST API · MUI · Tailwind | [Live](https://samkabir-openlibrary-apijs.netlify.app/) · [Code](https://github.com/samkabir/JS-API-Book-Archive) |
-| **FakeStore** — Store built on Context API | React · REST API · Context API · MUI | [Live](https://samkabir-fakestore-api.netlify.app/) · [Code](https://github.com/samkabir/JS-Debugging-Ranga-Store) |
-
-<sub>…and many more static & interactive builds on my <a href="https://github.com/samkabir?tab=repositories">repositories</a>.</sub>
-
----
-
 ## 📊 GitHub Stats
 
 <p align="center">
-  <img height="180em" src="https://github-readme-stats-brown-one-68.vercel.app/api?username=samkabir&show_icons=true&theme=react&hide_border=true&count_private=true" />
-  <img height="180em" src="https://github-readme-stats-brown-one-68.vercel.app/api/top-langs/?username=samkabir&layout=compact&theme=react&hide_border=true" />
+  <img height="180em" src="https://github-readme-stats-multiuser.vercel.app/api?usernames=samkabir,samiul-kabir-26&show_icons=true&theme=react&hide_border=true&count_private=true" />
+  <img height="180em" src="https://github-readme-stats-multiuser.vercel.app/api/top-langs/?usernames=samkabir,samiul-kabir-26&layout=compact&theme=react&hide_border=true" />
 </p>
 
 <p align="center">
