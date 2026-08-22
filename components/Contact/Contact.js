@@ -34,7 +34,7 @@ const Contact = () => {
                     Feel free to contact me anytime.
                 </Typography>
                 <Box className={`flex justify-center my-12 ${rubikFont.className}`}>
-                    <a href="mailto:admin@gamblingco.in" className='transform transition duration-500 border-2 border-[#7a61ff] py-2 px-6 my-4 font-semibold text-[#7a61ff] hover:text-[#000] hover:bg-[#7a61ff] normal-case'>
+                    <a href="mailto:samkabir26@gmail.com" className='transform transition duration-500 border-2 border-[#7a61ff] py-2 px-6 my-4 font-semibold text-[#7a61ff] hover:text-[#000] hover:bg-[#7a61ff] normal-case'>
                         Say Hello
                     </a>
                 </Box>

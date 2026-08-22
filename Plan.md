@@ -1,0 +1,563 @@
+# Portfolio CMS — Implementation Plan
+
+Turning this static portfolio into a database-backed site with a private admin
+dashboard, so content is managed through a UI instead of by editing
+`data/*.js` and redeploying.
+
+**Status:** Phase 1 complete. Phase 2 blocked on a Neon connection string
+(see [`Todo/01-create-neon-database.md`](Todo/01-create-neon-database.md)).
+
+---
+
+## Locked decisions
+
+| Concern | Choice | Why |
+|---|---|---|
+| Backend | Next.js API routes | Next.js already *is* a backend. One repo, one deploy, no CORS, no second service to host or secure. |
+| Router | Pages Router (stay) | The App Router in Next 16 needs React 19; this project is pinned to React 18.2 with MUI 5.11, which does not officially support React 19. Staying avoids a React 18→19 + MUI 5→7 migration that risks the existing design. Pages Router still gives SSG, ISR, on-demand revalidation and API routes. |
+| Database | Neon Postgres | Strongest genuinely-free Postgres: 0.5 GB, no credit card, auto-suspends to zero and wakes on connection. |
+| ORM | Prisma | Versioned SQL migrations and seeding were explicit requirements. The schema file doubles as documentation. |
+| Auth | NextAuth v4 | The Pages-Router-native version. Google + Credentials in one config, httpOnly signed cookies, CSRF built in. |
+| Password hashing | bcryptjs | Pure JS, no native build step — so it cannot hit the class of problem that broke the build in Phase 1. |
+| Validation | Zod | One schema per entity, imported by both the dashboard form and the API handler. |
+| File storage | Vercel Blob | One env var, no second account. Behind `lib/storage.js` so it can be swapped. |
+| Blog content | Markdown | Portable and diffable. Rendered with `remark-gfm` + `rehype-sanitize`. |
+| Dashboard UI | MUI 5 + Tailwind | Already dependencies. No new UI framework. |
+| Tests | Vitest | Covers Zod schemas, auth guards, and the migration mapping. |
+| Password recovery | CLI-only | No email dependency, no attack surface. Requires terminal access to recover. |
+
+### Why not SQLite
+
+Vercel's production filesystem is **read-only**. A SQLite file lives in that
+filesystem, so the public site could read content but every dashboard save
+would fail — which removes the point of the CMS. Writes to `/tmp` do not
+survive past a single function invocation. Turso (hosted libSQL) would work
+technically but needs the same signup-and-token flow as Neon, so it buys
+nothing.
+
+### Fallback if Vercel Blob's free allowance changes
+
+Cloudinary — 25 credits/month, free indefinitely, no card. `lib/storage.js`
+keeps the provider behind an interface, so switching is a one-file change
+rather than a migration.
+
+---
+
+## Rules this work follows
+
+1. **Inspect before changing.** Understand the existing architecture first.
+2. **Preserve the existing UI.** Components change their *data source*, not
+   their markup. The only visual-layer change proposed is `<img>` →
+   `next/image`, and only because it fixes measurable layout shift.
+3. **Minimise dependencies.** Every package added is justified in the table
+   above.
+4. **Reuse existing code.** Existing components, colours, fonts and patterns
+   are adapted, not replaced.
+5. **No hardcoded secrets.** Ever, in any form, including seed files.
+6. **Production quality.** Not a prototype.
+7. **Backward compatibility.** Existing functionality keeps working.
+8. **Validate on both sides.** Same Zod schema client and server.
+9. **Authorization is server-side.** Hiding a route is not security.
+10. **Document decisions.** Anything a future reader would have to re-derive.
+
+---
+
+## Phase 1 — Repair the baseline ✅ COMPLETE
+
+**Objective.** Get the project building, linting and rendering as it is today,
+before adding anything. The repo did not compile, so nothing after this would
+have been verifiable.
+
+**What was wrong.**
+
+- `pages/_app.js` imported `@/styles/globals.css`, but commit `da82247`
+  deleted `styles/` — so Tailwind emitted nothing and the build failed.
+- `next build` died with `Bus error (core dumped)`. Root cause: the
+  `@next/swc` native binary was truncated to 38 MB while its ELF `PT_LOAD`
+  headers described a 130 MB shared object. `mmap` succeeds on such a file;
+  faulting a page past end-of-file raises SIGBUS. npm re-served the same bad
+  tarball from cache, so a forced reinstall was a no-op.
+- `npm run lint` was broken — Next 16 removed the `next lint` command.
+- Both `mailto:` links displayed `samkabir26@gmail.com` but pointed at
+  `admin@gamblingco.in`.
+- Two projects referenced screenshots deleted in the same commit.
+- `prop-types` was imported but resolved only transitively through MUI.
+- `.gitignore` covered `.env*.local` but not plain `.env`.
+
+**Changes.** Restored `styles/globals.css` and both screenshots from
+`da82247^`; pinned `turbopack.root`; replaced `next lint` with a flat ESLint
+config; fixed the mailto targets; declared `prop-types`; hardened
+`.gitignore`; escaped apostrophes and switched the logo link to `next/link`.
+Fixed the SWC truncation with `npm cache clean --force` plus a reinstall.
+
+**Result.**
+
+```
+npm run build  →  compiled in ~1.7s, 3 routes prerendered
+npm run lint   →  0 errors, 3 warnings (all the planned next/image work)
+```
+
+The restored stylesheet is confirmed in the compiled CSS — `#141e30`,
+`.writer-text2` and the `scaleIn` keyframes all emit, where before Tailwind
+produced nothing.
+
+**Deliberately not fixed.** `pages/index.js` gates the page behind a loading
+state set in an empty effect, so the prerendered HTML is **2,476 bytes** of
+spinner with no indexable content. Annotated `TODO(phase-7)` rather than
+changed — removing it alters what renders, and belongs in the phase where the
+result can be diffed visually. **2,476 bytes is the baseline Phase 7 is
+measured against.**
+
+---
+
+## Phase 2 — Database design and schema
+
+**Objective.** Turn the content model into a Prisma schema with a first
+migration, verified against a live database.
+
+**Blocked on:** `Todo/01-create-neon-database.md`.
+
+- **Files:** `prisma/schema.prisma`, `prisma/migrations/`, `lib/prisma.js`,
+  `package.json` scripts, `.env.example`.
+- **Database:** all models, enums, and indexes on every `slug`, `order` and
+  `status`. Scripts for `db:migrate`, `db:push`, `db:studio`, `db:seed`.
+- **Frontend / Auth / API:** none yet.
+- **Migration:** initial only; no data.
+- **Testing:** migrate up and down cleanly on a scratch database; client
+  generates; a smoke script reads and writes each model.
+- **Docs:** schema decisions recorded as ADRs; `.env.example` with names only.
+- **Packages:** `prisma` (dev), `@prisma/client`.
+- **Risks:** serverless connection limits — mitigated by a pooled connection
+  string and a singleton client. Getting the singleton wrong exhausts
+  connections under dev hot-reload, so it is written the documented way.
+- **Result:** a versioned schema and a reproducible `migrate` path.
+
+### The data model
+
+Four deliberate departures from the current static shape:
+
+- **Experience and ContractualExperience become one table** with a `kind`
+  discriminator. The two source files are structurally identical and the two
+  components are near-duplicates. One model means one form, one API, one
+  validation schema — and a role can be reclassified without moving rows.
+- **Real dates replace display strings.** `startDate` / `endDate` /
+  `isCurrent` instead of `'July 2025 - Present'`, so ordering is computed
+  rather than manual. An optional `timelineOverride` preserves any label that
+  should read differently.
+- **Everything orderable gets an explicit `order`**, everything publishable
+  gets a status. The dashboard can reorder and unpublish without deleting.
+- **Uploads are first-class rows.** `Media` and a versioned `Resume` mean
+  replacing a CV keeps the old one recoverable instead of overwriting a file.
+
+```
+AdminUser      id, email(unique), name, image, passwordHash?, role,
+               lastLoginAt, createdAt, updatedAt
+Account        NextAuth OAuth linkage (Google) → AdminUser
+
+Profile        singleton. greeting, fullName, headline, tagline, bio,
+               publicEmail, contactEmail, leetcodeUsername, footerCredit,
+               attributionLabel, attributionUrl, avatarMediaId?
+SeoSettings    singleton. siteTitle, defaultDescription, canonicalUrl,
+               ogImageMediaId?, twitterHandle?
+SectionCopy    key(unique), numberLabel, heading, subheading?, order,
+               isVisible          ← the 00/01/10/11 numbering becomes data
+
+Education      institution, degree, field, note, startYear?, endYear?, order
+Skill          name(unique), category?, order, isPublished
+Experience     kind[FULL_TIME|CONTRACT], jobPosition, companyName, isNda,
+               location?, startDate, endDate?, isCurrent, timelineOverride?,
+               responsibilities String[], order, isPublished
+Project        slug(unique), title, description, coverMediaId?, repoUrl?,
+               liveUrl?, stacks String[], isFeatured, order, status
+SocialLink     platform, label, url, iconKey, order, isPublished,
+               showInSidebar, showInContact
+Resume         label, mediaId, version, isActive, uploadedAt
+
+BlogPost       slug(unique), title, excerpt, contentMarkdown, coverMediaId?,
+               coverAlt?, status[DRAFT|PUBLISHED], publishedAt,
+               readingMinutes, seoTitle?, seoDescription?, ogMediaId?,
+               authorId, createdAt, updatedAt
+Tag            slug(unique), name
+BlogPostTag    many-to-many join
+
+Media          url, pathname, mimeType, sizeBytes, width?, height?, alt?,
+               uploadedById, createdAt
+AuditLog       actorId, action, entity, entityId, diff Json, ip?, createdAt
+```
+
+**A judgement call.** Responsibility bullets are a Postgres `String[]`, not a
+child table. They are never queried or shared across roles — they only need
+reordering inside one form — so a child table would add joins and id
+management for nothing. If individual bullets ever need tagging or reuse, that
+becomes a migration; unlikely.
+
+---
+
+## Phase 3 — Validation layer and admin API
+
+**Objective.** Build the protected CRUD surface with one handler pattern, so
+every entity behaves identically and no route can forget its auth check.
+
+- **Files:** `lib/validation/*.js` (one Zod schema per entity),
+  `lib/api/handler.js`, `lib/auth.js`, `pages/api/admin/**`.
+- **API:** full CRUD per entity plus `reorder` and `publish`. Consistent error
+  envelope `{ error: { message, fields? } }`, where `fields` maps Zod issues
+  onto form inputs. `AuditLog` written on every mutation.
+- **Auth:** `withAdmin()` is written here and **stubbed to deny-all** until
+  Phase 4, so no route is ever open by default.
+- **Testing:** Zod unit tests (valid, invalid, boundary, injection-shaped);
+  every route returns 401 unauthenticated, asserted per route rather than
+  assumed; 405 on disallowed methods; reorder is transactional.
+- **Packages:** `zod`, `vitest` (dev).
+- **Risks:** a hand-rolled route that skips `withAdmin()` is the classic hole.
+  The suite asserts 401 across an enumerated list of every admin route, so a
+  new unguarded route fails CI.
+- **Result:** a complete, tested, uniformly guarded API.
+
+### Conventions every handler follows
+
+Method allowlist → `withAdmin()` → Zod parse → Prisma call. Never a different
+order. Nothing echoes a `passwordHash`. No admin response is cacheable.
+
+---
+
+## Phase 4 — Authentication
+
+**Objective.** Google and email/password sign-in for exactly one allowlisted
+identity, with no registration path and no plaintext password anywhere.
+
+**Needs:** `Todo/02-set-up-google-sign-in.md`.
+
+- **Files:** `pages/api/auth/[...nextauth].js`, `lib/auth.js` (real),
+  `pages/admin/login.js`, `middleware.js`, `scripts/create-admin.js`,
+  `scripts/reset-password.js`.
+- **Auth:** Google + Credentials providers; `signIn` callback allowlists
+  `ADMIN_EMAILS`; bcrypt verification; JWT sessions in httpOnly `SameSite=Lax`
+  `Secure` cookies; rate-limited credentials endpoint; change-password
+  requiring the current password.
+- **Database:** `Account` for Google linkage; `passwordHash` and `lastLoginAt`
+  populated.
+- **Testing:** a non-allowlisted Google account is rejected and creates no
+  row; wrong password fails and correct succeeds; the rate limit trips; a
+  direct curl to an admin route without a cookie returns 401; the session
+  cookie is httpOnly and Secure.
+- **Packages:** `next-auth`@4, `@next-auth/prisma-adapter`, `bcryptjs`.
+- **Risks:** OAuth redirect URIs differ between local and production and are a
+  common launch failure. Both get documented and tested.
+- **Result:** only you can sign in, by either method. No secret in the repo.
+
+### Three independent gates
+
+1. **Provider level.** Both sign-in methods terminate in NextAuth's `signIn`
+   callback, which returns `false` unless the email is in `ADMIN_EMAILS` *and*
+   matches an existing `AdminUser`. A stranger with a valid Google account is
+   rejected at the callback and no row is created.
+2. **Credentials level.** Verified against a bcrypt hash. There is **no signup
+   endpoint**. The first admin is created by `npm run admin:create`, which
+   reads the email from env and prompts for the password on hidden stdin. The
+   plaintext never touches a file, a seed script, or a git object.
+3. **Request level.** Every `/api/admin/*` handler is wrapped in
+   `withAdmin()`, which 401s before the handler body runs. This is the gate
+   that matters: curl, Postman and cross-origin requests hit the same check as
+   the dashboard. The `middleware.js` redirect is a convenience for humans,
+   **not** a security boundary.
+
+**On account linking.** Signing in with Google using the same address as the
+credentials admin would normally be refused, as protection against takeover by
+email claim. Linking is enabled *only* for emails already on the
+`ADMIN_EMAILS` allowlist — safe because that list is server-side
+configuration, not user input.
+
+---
+
+## Phase 5 — File storage and media
+
+**Objective.** Make uploads work end to end, safely. The CV, blog covers and
+project images all depend on it, so it blocks Phases 6–8.
+
+**Needs:** `Todo/03-create-vercel-blob-store.md`.
+
+- **Files:** `lib/storage.js`, `pages/api/admin/media/upload.js`,
+  `pages/api/cv.js`, `components/admin/ImageField.jsx`, `FileField.jsx`.
+- **Security:** MIME **and** magic-byte checks, not just the extension;
+  per-type size caps; generated storage keys, never the client's filename;
+  uploads authenticated and audited; orphaned `Media` rows cleaned up.
+- **Frontend:** drag-and-drop with progress, preview and an alt-text field;
+  replace and remove with confirmation.
+- **Testing:** a PDF renamed `.png` is rejected; an oversized upload is
+  rejected with a readable error; an unauthenticated upload returns 401;
+  `/cv` redirects to the active resume.
+- **Packages:** `@vercel/blob`.
+- **Risks:** serverless request-body limits make large PDFs fail server-side;
+  client-direct upload with a signed token avoids it. Storage is the one hard
+  vendor dependency, so it stays behind an interface.
+- **Result:** any image or PDF uploadable from the dashboard and served from a
+  stable URL. `/cv` becomes a permanent shareable link.
+
+---
+
+## Phase 6 — Dashboard shell and portfolio CRUD
+
+**Objective.** The dashboard itself: layout, reusable table and form
+components, and working screens for every portfolio entity.
+
+- **Files:** `components/admin/` (AdminLayout, Sidebar, DataTable, EntityForm,
+  SortableList, ArrayField, ConfirmDialog, Toast, StatusChip);
+  `pages/admin/` (index, experiences, projects, skills, bio, links, settings,
+  account); `lib/adminTheme.js` built from the site's existing hex values.
+- **Frontend:** client-side fetching with optimistic updates and rollback;
+  drag-to-reorder wired to the batch endpoint; search and filter where a list
+  is long enough to need it; loading skeletons, empty states, error states
+  with retry, and an unsaved-changes guard.
+- **Auth:** every admin page wrapped in a server-side session check, in
+  addition to the middleware redirect.
+- **Testing:** create, edit, reorder and delete each entity end to end; a
+  server-side rejection surfaces as a field error rather than a silent
+  failure; keyboard navigation and focus states on every form; usable at
+  tablet width.
+- **Packages:** ideally none beyond MUI. A small drag library may be needed
+  for reordering — MUI primitives get tried first.
+- **Risks:** Tailwind's `important: true` can fight MUI's own styles in dense
+  admin components. Admin styling goes through MUI's theme and `sx` to avoid
+  the collision.
+- **Result:** every piece of content editable through a UI, database
+  populated, public site still reading static files — so nothing is at risk
+  yet.
+
+### Screens
+
+| Screen | What it does |
+|---|---|
+| `/admin` | Counts per entity, drafts awaiting publish, recent edits from `AuditLog`, active CV, last revalidation |
+| `/admin/experiences` | Two tabs (Full-time, Contractual) over one table. Reorder, publish toggle, NDA flag, array editor for bullets |
+| `/admin/projects` | Searchable list, featured toggle (drives the homepage's first three), reorder, cover upload, stack tags |
+| `/admin/skills` | Fast inline add/remove, reorder, optional grouping |
+| `/admin/bio` | Greeting, name, headline, tagline, career objective, education rows, LeetCode username |
+| `/admin/links` | URL, icon, and two visibility switches — sidebar rail and contact block |
+| `/admin/resume` | Drop a PDF to publish a new version. History with restore. Shows the public `/cv` link |
+| `/admin/blogs` | Status filter and search; full editor (Phase 8) |
+| `/admin/settings` | SEO defaults, OG image, section headings and numbering, footer credit, manual rebuild |
+| `/admin/account` | Change password, linked Google account, active sessions, recent sign-ins |
+
+---
+
+## Phase 7 — Seed the database and cut the public site over
+
+**Objective.** Move the public site from static imports to database-driven
+props, section by section, with no visible change.
+
+- **Files:** `prisma/seed.js`; `pages/index.js` (add `getStaticProps`, remove
+  the loading gate); all 12 existing components (props instead of imports);
+  `lib/revalidate.js`, `pages/api/revalidate.js`.
+- **Frontend:** **markup is not redesigned** — each component's data source
+  changes, its JSX and classes do not. Rubik consolidated into one module
+  instead of three. The dead LeetCode call replaced with a cached server-side
+  proxy. Sensible fallbacks when a section is empty.
+- **Testing:** side-by-side visual diff of every section, desktop and mobile;
+  view-source confirms content is in the HTML rather than injected after
+  hydration; edit in the dashboard → reload → change is live; the seed runs
+  twice without duplicating rows.
+- **Risks:** this is the phase that can visibly break the site. One section
+  per commit, each verified before the next, static files retained until the
+  whole page is confirmed.
+- **Result:** the public portfolio renders from the database, looks identical,
+  and updates on save — no code change, no redeploy.
+
+### Migration strategy
+
+1. **Import, don't transcribe.** `prisma/seed.js` imports the existing arrays
+   and maps them onto the new models, so the migration is reviewable,
+   re-runnable code rather than a data-entry session.
+2. **Parse the timeline strings.** `'July 2025 - Present'` becomes
+   `startDate: 2025-07-01, isCurrent: true`. Both the en-dash and hyphen forms
+   appear in the source; the parser handles both and **fails loudly** on
+   anything it cannot read rather than guessing.
+3. **Fix identity.** Ignore the duplicate and gapped source ids entirely
+   (`data/projects.js` has two entries with `id: 1`; `data/experience.js` uses
+   `0,1,4,5,6`). Generate fresh ids, set `order` from array position to
+   preserve the current on-screen order exactly, and drop the unused `tag`
+   field.
+4. **Preserve the commented-out projects.** The five NDA entries in
+   `data/projects.js` are imported as `status: DRAFT` — nothing is lost, and
+   any can be published later. **Confirm this is wanted.**
+5. **Move the files.** Upload every image in `public/images/projects/` and the
+   resume PDF to Blob, creating `Media` rows and rewriting references.
+   `public/` keeps the logos and favicon only.
+6. **Cut over one section at a time**, diffing rendered output against the
+   current site before moving on.
+7. **Retire the static files last,** in a single commit, once every section is
+   verified. Git history keeps them recoverable.
+
+### What is currently hardcoded
+
+More content lives inline in JSX than in `data/` — this is the full surface.
+
+| Content | Lives in | Becomes |
+|---|---|---|
+| 19 skills | `data/skills.js` | `Skill` |
+| 5 full-time roles + bullets | `data/experience.js` | `Experience(FULL_TIME)` |
+| 2 contract roles + bullets | `data/contractualExperiences.js` | `Experience(CONTRACT)` |
+| 16 active + 5 commented projects | `data/projects.js` | `Project` |
+| Greeting, name, tagline | `MainComponent.js:23–44` | `Profile` |
+| Career objective paragraph | `AboutMe.js:46–50` | `Profile.bio` |
+| BRAC University + O/A Levels | `AboutMe.js:53–65` | `Education` |
+| LeetCode username, profile URL, popover copy | `AboutMe.js:14,116` | `Profile` + `SocialLink` |
+| LinkedIn, GitHub, Facebook (duplicated) | `SocialMediaLinks.js`, `Contact.js` | `SocialLink` |
+| Displayed email and mailto target | `SocialMediaLinks.js:24`, `Contact.js:37` | `Profile` |
+| Resume PDF path | `MainComponent.js:53` | `Resume` (active) |
+| Section headings + 00/01/10/11 numbering | Header, AboutMe, Experience, DemoProjects, Contact | `SectionCopy` |
+| Footer credit and attribution | `Footer.js:13–17` | `Profile` |
+| Page title and meta description | `index.js:27–30` | `SeoSettings` |
+| "Show first 3 projects" rule | `DemoProjects.js:14` | `Project.isFeatured` |
+
+---
+
+## Phase 8 — Blog system
+
+**Objective.** A complete blog — public listing, post pages, and a dashboard
+editor with drafts — in the portfolio's existing visual language.
+
+- **Files:** `pages/blog/index.js`, `pages/blog/[slug].js`,
+  `components/Blog/` (BlogCard, BlogPostBody, TagPill, ShareRow),
+  `pages/admin/blogs/` (list, new, `[id]`),
+  `components/admin/MarkdownEditor.jsx`, and `header.js` to enable the
+  already-commented-out Blog nav item at line 66.
+- **Frontend:** cards reuse `ProjectCard`'s `#233352` surface, radius and
+  hover so the blog looks native. Post page: cover, title, date, reading time,
+  tags, sanitized markdown, prev/next. Loading, empty ("no posts yet") and 404
+  states. Responsive at the same breakpoints as the rest of the site.
+- **SEO:** per-post title, description, canonical, OG and Twitter cards;
+  JSON-LD `BlogPosting`; database-driven sitemap. Drafts are `noindex` and 404
+  for anonymous visitors.
+- **Testing:** a draft is not reachable by URL or listed publicly; publishing
+  goes live within one revalidation; slug collisions rejected with a clear
+  message; `<script>` in post content is sanitized rather than executed
+  (asserted in a test); Lighthouse SEO on a post page.
+- **Packages:** `react-markdown`, `remark-gfm`, `rehype-sanitize`.
+- **Risks:** stored markup is the main XSS vector in the system — the author is
+  trusted but the output is public. `rehype-sanitize` with an explicit
+  allowlist, and no `dangerouslySetInnerHTML` anywhere.
+- **Result:** `/blog` and `/blog/[slug]` live, "Blogs" in the nav, full
+  draft-to-publish workflow.
+
+---
+
+## Phase 9 — Security hardening and test suite
+
+**Objective.** Attack the system deliberately, then close what that finds.
+This phase assumes the implementation is wrong until tested.
+
+- **Files:** `tests/` (validation, auth-guard, storage, migration mapping);
+  `next.config.js` security headers; `middleware.js` rate limiting.
+- **Security:** CSP, `X-Frame-Options`, `Referrer-Policy`, HSTS,
+  `X-Content-Type-Options`; admin routes `noindex` and non-cacheable; a secret
+  scan across the **full git history**, not just the working tree; dependency
+  audit.
+- **Testing:** every admin route hit unauthenticated, with an expired session,
+  and with a tampered JWT; non-allowlisted Google identity blocked; oversized,
+  wrong-type and script-bearing uploads rejected; payloads containing SQL and
+  HTML injection attempts; draft-visibility bypass attempted by direct URL and
+  by API.
+- **Risks:** a CSP tight enough to be useful can break MUI's runtime-injected
+  Emotion styles. It gets tuned against the real rendered app, not written
+  from a template.
+- **Result:** a test suite whose failures would be real security regressions,
+  and a documented threat model.
+
+---
+
+## Phase 10 — Documentation and CLAUDE.md
+
+**Objective.** Write down everything a future session or developer would
+otherwise have to rediscover, including decisions not visible in the code.
+
+- **Files:** `CLAUDE.md`; `docs/setup.md`, `architecture.md`,
+  `content-management.md`, `deployment.md`, `security.md`; `docs/adr/` (one
+  short record per architectural decision); `.env.example`; refreshed
+  `AGENTS.md` — both it and `docs/README.md` still reference the `styles/`
+  directory as though it were never deleted.
+- **Contents:** prerequisites, env vars, install, dev, build, migrate, seed,
+  deploy; auth flow, API conventions, data and component conventions; Google
+  OAuth and storage setup step by step; a plain-language guide per content type
+  (how to add an experience, upload a CV, publish a post); what must not be
+  changed casually, and why.
+- **Testing:** follow the setup doc from a clean clone against an empty
+  database. If a step is missing, the doc is wrong — not the reader.
+- **Risks:** docs written once and never updated. Mitigated by keeping
+  `CLAUDE.md` current at the end of each phase rather than all at the end.
+
+---
+
+## Phase 11 — Deployment and verification
+
+**Objective.** Ship it, then verify the whole flow against production rather
+than assuming it carried over.
+
+- **Steps:** production database provisioned and `migrate deploy` run; all env
+  vars set in the host; production OAuth redirect URI registered; production
+  admin created via the CLI against the live database; seed run once and
+  verified row by row; custom domain, HTTPS, `robots.txt`, sitemap submitted.
+- **Verification:** both sign-in methods work in production; an edit in
+  production updates the public page without a redeploy; a CV and a cover
+  image upload in production; a real post publishes and unpublishes;
+  Lighthouse on `/` and a post page compared against the current site; admin
+  routes confirmed unreachable while signed out.
+- **Risks:** environment drift is where this kind of project usually fails — a
+  missing variable, an unregistered redirect URI, an unpooled connection
+  string. Mitigated by a written pre-flight checklist that gets executed, not
+  skimmed.
+- **Result:** a live portfolio managed entirely from a dashboard, and a
+  repository that no longer needs editing to change its own content.
+
+---
+
+## Rendering strategy
+
+Today the homepage ships a 2,476-byte empty shell. Static HTML generated from
+the database and refreshed on demand makes the page **faster and more
+indexable** while becoming dynamic.
+
+| Route | Strategy | Notes |
+|---|---|---|
+| `/` | SSG + ISR | `revalidate: 3600` plus on-demand busting on save. Loading gate removed. |
+| `/blog` | SSG + ISR | Published posts only, newest first, paginated. |
+| `/blog/[slug]` | SSG + ISR | `getStaticPaths` over published slugs, `fallback: 'blocking'` so a new post is reachable immediately. Unknown slug → 404. |
+| `/admin/*` | Client + SSR guard | `noindex, nofollow`. Never statically generated. |
+| `/sitemap.xml`, `/robots.txt` | SSR | Generated from the database, so new posts appear without a deploy. |
+
+**On-demand revalidation is the mechanism behind "save and the site
+updates".** Saving an experience busts `/`; publishing a post busts `/blog`,
+that post's page, and the sitemap. No redeploy.
+
+---
+
+## Risk register
+
+| Risk | Severity | Handling |
+|---|---|---|
+| Cutting the public site over to the database visibly breaks it | High | One section per commit, visual diff each time, static files retained until verified |
+| An admin API route ships without an auth check | High | One shared `withAdmin()`, plus a test asserting 401 across an enumerated route list |
+| Stored blog markup executes script on the public site | Medium | `rehype-sanitize` with an explicit allowlist; no `dangerouslySetInnerHTML`; tested with a hostile payload |
+| React 18 + MUI 5 pin blocks the App Router | Medium | Accepted deliberately — see Locked decisions |
+| Serverless database connection exhaustion | Medium | Pooled connection string, singleton Prisma client |
+| Object storage is a real vendor dependency | Medium | Confined behind `lib/storage.js` |
+| A secret reaches git | Medium | `.env` added to `.gitignore` in Phase 1; `.env.example` holds names only; Phase 9 scans full history |
+| Tailwind `important: true` collides with MUI in the dashboard | Low | Admin components style through MUI's theme and `sx` |
+| Content becomes empty and sections render blank | Low | Every section has a defined empty state; the seed guarantees a baseline |
+
+---
+
+## Open questions
+
+- **Admin email** for the `ADMIN_EMAILS` allowlist. Defaulting to
+  `samkabir26@gmail.com` — what the site displays and the README uses.
+- **Contact email.** Phase 1 pointed both `mailto:` links at
+  `samkabir26@gmail.com`, since the displayed address and README agreed and
+  `admin@gamblingco.in` was the outlier. Correct if wrong.
+- **The five NDA projects** currently commented out — import as drafts, or
+  leave out?
+- **The LeetCode section.** The code uses `greeed` for the API and `Greeed`
+  for the profile link, and the Heroku endpoint behind it is almost certainly
+  dead. Keep the section with a server-side cached proxy, or drop it?
+- **`next/image` migration.** The one visual-layer change proposed, and only
+  because it fixes measurable layout shift. Say so and it gets skipped.

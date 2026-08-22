@@ -1,4 +1,5 @@
 import { Box } from '@mui/material';
+import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import AOS from 'aos';
 import 'aos/dist/aos.css';
@@ -14,11 +15,11 @@ const Header = () => {
             <div className="justify-between px-4 mx-auto lg:max-w-7xl md:items-center md:flex md:px-8">
                 <div>
                     <div className="flex items-center justify-between py-3 md:py-5 md:block">
-                        <a href="/">
+                        <Link href="/">
                             <Box>
                                 <img src='/images/Logo.png' alt='Logo' className='' width="50px" />
                             </Box>
-                        </a>
+                        </Link>
                         <div className="md:hidden">
                             <button
                                 className="p-2 text-gray-700 rounded-md outline-none focus:border-gray-400 focus:border"

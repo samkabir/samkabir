@@ -18,7 +18,12 @@ export default function Home() {
 
   const [loading, setLoading] = useState(true);
 
+  // TODO(phase-7): this artificial loading gate means the server-rendered HTML
+  // contains only a spinner, so no portfolio content is indexable. It is removed
+  // when the page moves to getStaticProps + ISR. Kept for now to preserve the
+  // current behaviour while the baseline is repaired.
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setLoading(false);
   }, []);
   return (

@@ -52,7 +52,7 @@ const AboutMe = () => {
                         <ul className='list-disc'>
                             <li>
                                 <Typography variant='subtitle2' className='pt-6'>
-                                    Completed UnderGraduation, Bachelor's in <span className='text-[#7a61ff] font-semibold'>Computer Science and Engineering</span> from <span className='text-[#7a61ff] font-semibold'>BRAC University</span>.
+                                    Completed UnderGraduation, Bachelor&apos;s in <span className='text-[#7a61ff] font-semibold'>Computer Science and Engineering</span> from <span className='text-[#7a61ff] font-semibold'>BRAC University</span>.
                                 </Typography>
                             </li>
                             <li>
@@ -110,7 +110,7 @@ const AboutMe = () => {
                         onClose={handlePopoverClose}
                         disableRestoreFocus
                     >
-                        <Typography sx={{ p: 1 }}>It ain't much, but it's honest work. Click on the number and View my LeetCode Profile.</Typography>
+                        <Typography sx={{ p: 1 }}>It ain&apos;t much, but it&apos;s honest work. Click on the number and View my LeetCode Profile.</Typography>
                     </Popover>
                 </Box>
                 <a href="https://leetcode.com/Greeed/" target="_blank" rel="noreferrer">

@@ -21,7 +21,7 @@ const SocialMediaLinks = () => {
             </Box>
             <Box>
                 <ul className='list-none m-0 p-0 fixed bottom-36 right-0'>
-                    <li className="rotate-90 font-semibold text-[#5845c4]" ><a href="mailto:admin@gamblingco.in">samkabir26@gmail.com</a></li>
+                    <li className="rotate-90 font-semibold text-[#5845c4]" ><a href="mailto:samkabir26@gmail.com">samkabir26@gmail.com</a></li>
                 </ul>
             </Box>
         </div>
