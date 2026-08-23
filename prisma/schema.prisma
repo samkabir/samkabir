@@ -1,0 +1,532 @@
+// Prisma schema for the portfolio CMS.
+//
+// Conventions used throughout, so the rest of the file reads without surprises:
+//
+//   * Models are PascalCase and singular; tables and columns are snake_case via
+//     @@map / @map. Prisma code stays idiomatic JavaScript while the database
+//     stays readable in psql or Neon's SQL editor.
+//   * Ids are cuid() strings. They are safe to expose in URLs, sort roughly by
+//     creation time, and do not leak row counts the way sequential ints do.
+//   * Every publicly rendered model carries `status PublishStatus`. One uniform
+//     predicate — status: 'PUBLISHED' — guards every public query. See the note
+//     on PublishStatus below for why this is an enum and not a boolean.
+//   * Anything the dashboard can reorder carries `order Int`, indexed.
+//   * Every table carries createdAt / updatedAt. Cheap now, impossible to
+//     backfill honestly later.
+//
+// Deliberate departures from the old static files are documented in
+// docs/adr/0002-database-schema.md.
+
+generator client {
+  provider = "prisma-client-js"
+
+  // "native" builds the engine for this machine; "rhel-openssl-3.0.x" is what
+  // Vercel's serverless runtime needs. Declaring it now means the first deploy
+  // in Phase 11 does not fail on a missing engine binary.
+  binaryTargets = ["native", "rhel-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+
+  // Pooled connection — what the running application uses. Serverless functions
+  // open and drop connections constantly and would exhaust a direct connection.
+  url = env("DATABASE_URL")
+
+  // Unpooled connection — what migrations need. Schema changes require a single
+  // stable session, which a transaction pooler cannot provide.
+  directUrl = env("DIRECT_URL")
+}
+
+// ---------------------------------------------------------------------------
+// Enums
+// ---------------------------------------------------------------------------
+
+/// Publication state for every public-facing model.
+///
+/// This is an enum rather than an `isPublished` boolean because a mix of the two
+/// is how a draft eventually leaks: one query filters `isPublished: true`,
+/// another forgets, and nobody notices until an unfinished post is indexed. A
+/// single shape means a single guard that is either present or conspicuously
+/// absent in review.
+///
+/// For always-on records such as social links, DRAFT simply means hidden.
+enum PublishStatus {
+  DRAFT
+  PUBLISHED
+}
+
+/// Distinguishes permanent roles from consulting engagements. The two source
+/// files were structurally identical, so they became one table with a
+/// discriminator: one form, one endpoint, one validation schema, and a role can
+/// be reclassified without moving rows between tables.
+enum ExperienceKind {
+  FULL_TIME
+  CONTRACT
+}
+
+enum UserRole {
+  ADMIN
+}
+
+// ---------------------------------------------------------------------------
+// Identity
+// ---------------------------------------------------------------------------
+
+/// A person permitted to use the dashboard. There is normally exactly one.
+///
+/// Rows are created only by the CLI bootstrap script or by a successful
+/// allowlisted sign-in — never by a public registration route, because none
+/// exists. `passwordHash` is a bcrypt digest and is null for accounts that only
+/// ever sign in with Google.
+model AdminUser {
+  id           String    @id @default(cuid())
+  email        String    @unique
+  name         String?
+  image        String?
+  passwordHash String?   @map("password_hash")
+  role         UserRole  @default(ADMIN)
+  lastLoginAt  DateTime? @map("last_login_at")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+
+  oauthAccounts OAuthAccount[]
+  blogPosts     BlogPost[]
+  uploads       Media[]
+  auditLogs     AuditLog[]
+
+  @@map("admin_users")
+}
+
+/// Links a Google identity to an AdminUser.
+///
+/// Deliberately not shaped for @next-auth/prisma-adapter. The adapter creates a
+/// user row as part of the OAuth handshake, which is the wrong order for us: the
+/// email allowlist has to be checked *before* anything is persisted, so that a
+/// rejected sign-in leaves no trace. Phase 4 writes this row itself inside the
+/// signIn callback, after the allowlist passes.
+model OAuthAccount {
+  id                String   @id @default(cuid())
+  userId            String   @map("user_id")
+  provider          String
+  providerAccountId String   @map("provider_account_id")
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+
+  user AdminUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+  @@map("oauth_accounts")
+}
+
+// ---------------------------------------------------------------------------
+// Site-wide singletons
+// ---------------------------------------------------------------------------
+
+/// The "about me" identity block: everything currently hardcoded across
+/// MainComponent, AboutMe, Contact, SocialMediaLinks and Footer.
+///
+/// Single-row table. The id defaults to the literal "singleton" and every code
+/// path upserts on that value, so a second row is unreachable through the
+/// application. Postgres CHECK constraints are not expressible in a Prisma
+/// schema, so this is a convention enforced in the data layer rather than by the
+/// database — see docs/adr/0002-database-schema.md.
+model Profile {
+  id String @id @default("singleton")
+
+  greeting String @default("Hi, This is")
+  fullName String @map("full_name")
+
+  /// The animated line under the name — currently "I Forge Web Designs for the
+  /// Digital space."
+  headline String
+
+  /// Longer prose for the About section.
+  bio String
+
+  /// Shown publicly and used for the mailto: links.
+  publicEmail String @map("public_email")
+
+  /// Where the contact form delivers, if it differs from the address on display.
+  /// The old code displayed one address and linked another; separating the two
+  /// fields makes that divergence intentional instead of accidental.
+  contactEmail String? @map("contact_email")
+
+  leetcodeUsername String? @map("leetcode_username")
+  showLeetcode     Boolean @default(true) @map("show_leetcode")
+
+  footerCredit     String  @default("Designed & Built By Samiul Kabir") @map("footer_credit")
+  attributionLabel String? @map("attribution_label")
+  attributionUrl   String? @map("attribution_url")
+
+  avatarMediaId String? @map("avatar_media_id")
+  avatarMedia   Media?  @relation(fields: [avatarMediaId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("profile")
+}
+
+/// Metadata for <head>. Separate from Profile because it changes for different
+/// reasons and on a different cadence.
+model SeoSettings {
+  id String @id @default("singleton")
+
+  siteTitle          String  @map("site_title")
+  defaultDescription String  @map("default_description")
+  canonicalUrl       String? @map("canonical_url")
+  twitterHandle      String? @map("twitter_handle")
+
+  ogImageMediaId String? @map("og_image_media_id")
+  ogImageMedia   Media?  @relation(fields: [ogImageMediaId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("seo_settings")
+}
+
+/// Section headings, including the binary 00 / 01 / 10 / 11 numbering.
+///
+/// Those labels are currently duplicated between each section component and the
+/// header nav, so renumbering means editing two files and hoping they agree.
+/// As data they are written once and read by both.
+model SectionCopy {
+  id String @id @default(cuid())
+
+  /// Stable identifier the components look up by: "about", "skills",
+  /// "experience", "contractual", "projects", "contact".
+  key String @unique
+
+  /// The "00." prefix. Free text, because the numbering is a stylistic choice
+  /// rather than a sequence to compute.
+  numberLabel String  @map("number_label")
+  heading     String
+  subheading  String?
+
+  /// Label used in the header nav, when it differs from the heading —
+  /// "Work" in the nav versus "Some Projects I worked on..." on the section.
+  navLabel String? @map("nav_label")
+
+  /// The in-page anchor, e.g. "about". Null for sections absent from the nav.
+  anchor String?
+
+  showInNav Boolean       @default(true) @map("show_in_nav")
+  order     Int           @default(0)
+  status    PublishStatus @default(PUBLISHED)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([status, order])
+  @@map("section_copy")
+}
+
+// ---------------------------------------------------------------------------
+// Résumé content
+// ---------------------------------------------------------------------------
+
+model Education {
+  institution String
+  degree      String?
+  field       String?
+
+  /// Free-text qualifier such as "under Pearson Edexcel Education".
+  note String?
+
+  startYear Int? @map("start_year")
+  endYear   Int? @map("end_year")
+
+  id        String        @id @default(cuid())
+  order     Int           @default(0)
+  status    PublishStatus @default(PUBLISHED)
+  createdAt DateTime      @default(now()) @map("created_at")
+  updatedAt DateTime      @updatedAt @map("updated_at")
+
+  @@index([status, order])
+  @@map("education")
+}
+
+model Skill {
+  id       String  @id @default(cuid())
+  name     String  @unique
+  /// Optional grouping — "Frontend", "Backend", "Tooling". Null renders in the
+  /// single flat list the site shows today, so grouping can be introduced later
+  /// without a migration.
+  category String?
+
+  order     Int           @default(0)
+  status    PublishStatus @default(PUBLISHED)
+  createdAt DateTime      @default(now()) @map("created_at")
+  updatedAt DateTime      @updatedAt @map("updated_at")
+
+  @@index([status, order])
+  @@map("skills")
+}
+
+/// Permanent roles and consulting engagements in one table.
+model Experience {
+  id          String         @id @default(cuid())
+  kind        ExperienceKind @default(FULL_TIME)
+  jobPosition String         @map("job_position")
+  companyName String         @map("company_name")
+
+  /// True when the client cannot be named. Kept as a flag rather than baked
+  /// into the company name so the dashboard can warn before publishing and the
+  /// public view can render a consistent disclaimer.
+  isNda Boolean @default(false) @map("is_nda")
+
+  location String?
+
+  /// Real dates, so ordering is computed rather than hand-maintained. Stored as
+  /// DATE — the day is as precise as an employment record needs to be, and a
+  /// timestamp would drag timezone questions into a field that has none.
+  startDate DateTime  @map("start_date") @db.Date
+  endDate   DateTime? @map("end_date") @db.Date
+  isCurrent Boolean   @default(false) @map("is_current")
+
+  /// Overrides the generated "July 2025 – Present" label when the real dates
+  /// would read wrongly. Display concern only; ordering always uses the dates.
+  timelineOverride String? @map("timeline_override")
+
+  /// Bullet points, as a Postgres text[].
+  ///
+  /// A child table was considered and rejected: these are never queried, never
+  /// shared between roles, and only need reordering inside a single form. A join
+  /// table would add id management and a join for no gain. If bullets ever need
+  /// tagging or reuse, that becomes a migration.
+  responsibilities String[]
+
+  order     Int           @default(0)
+  status    PublishStatus @default(PUBLISHED)
+  createdAt DateTime      @default(now()) @map("created_at")
+  updatedAt DateTime      @updatedAt @map("updated_at")
+
+  @@index([kind, status, order])
+  @@index([startDate])
+  @@map("experiences")
+}
+
+model Project {
+  id String @id @default(cuid())
+
+  /// Stable public identifier, derived from the title. The old file had two
+  /// entries sharing id: 1, which a unique slug makes impossible.
+  slug        String  @unique
+  title       String
+  description String  @default("")
+  repoUrl     String? @map("repo_url")
+  liveUrl     String? @map("live_url")
+
+  /// Technologies, as a Postgres text[]. Same reasoning as
+  /// Experience.responsibilities: display-only, never joined.
+  stacks String[]
+
+  isNda      Boolean @default(false) @map("is_nda")
+  isFeatured Boolean @default(false) @map("is_featured")
+
+  coverMediaId String? @map("cover_media_id")
+  coverMedia   Media?  @relation(fields: [coverMediaId], references: [id], onDelete: SetNull)
+
+  order     Int           @default(0)
+  status    PublishStatus @default(PUBLISHED)
+  createdAt DateTime      @default(now()) @map("created_at")
+  updatedAt DateTime      @updatedAt @map("updated_at")
+
+  @@index([status, order])
+  @@index([isFeatured])
+  @@map("projects")
+}
+
+model SocialLink {
+  id       String @id @default(cuid())
+  platform String
+  label    String
+  url      String
+
+  /// Selects the icon component in the UI — "linkedin", "github", "facebook".
+  /// A key rather than a URL or class name, so the icon set stays a frontend
+  /// concern and the database never dictates markup.
+  iconKey String @map("icon_key")
+
+  /// The site shows the same links in two places with different styling. These
+  /// flags let one be hidden without deleting the row.
+  showInSidebar Boolean @default(true) @map("show_in_sidebar")
+  showInContact Boolean @default(true) @map("show_in_contact")
+
+  order     Int           @default(0)
+  status    PublishStatus @default(PUBLISHED)
+  createdAt DateTime      @default(now()) @map("created_at")
+  updatedAt DateTime      @updatedAt @map("updated_at")
+
+  @@index([status, order])
+  @@map("social_links")
+}
+
+/// Versioned CV uploads.
+///
+/// Replacing the CV adds a row and flips isActive rather than overwriting a
+/// file, so the previous version stays downloadable and a bad upload is undone
+/// by flipping a flag instead of hunting for a backup.
+model Resume {
+  id      String @id @default(cuid())
+  label   String
+  version Int    @default(1)
+
+  /// Required, and Restrict on delete: the underlying file cannot be removed
+  /// while a résumé record points at it.
+  mediaId String @map("media_id")
+  media   Media  @relation(fields: [mediaId], references: [id], onDelete: Restrict)
+
+  isActive   Boolean  @default(false) @map("is_active")
+  uploadedAt DateTime @default(now()) @map("uploaded_at")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  @@index([isActive])
+  @@map("resumes")
+}
+
+// ---------------------------------------------------------------------------
+// Blog
+// ---------------------------------------------------------------------------
+
+model BlogPost {
+  id      String @id @default(cuid())
+  slug    String @unique
+  title   String
+  excerpt String @default("")
+
+  /// Markdown source. Rendered through a sanitising pipeline at display time,
+  /// never with dangerouslySetInnerHTML.
+  contentMarkdown String @map("content_markdown")
+
+  coverMediaId String? @map("cover_media_id")
+  coverMedia   Media?  @relation("BlogPostCover", fields: [coverMediaId], references: [id], onDelete: SetNull)
+  coverAlt     String? @map("cover_alt")
+
+  ogMediaId String? @map("og_media_id")
+  ogMedia   Media?  @relation("BlogPostOgImage", fields: [ogMediaId], references: [id], onDelete: SetNull)
+
+  seoTitle       String? @map("seo_title")
+  seoDescription String? @map("seo_description")
+
+  /// Estimated read time, recomputed from the Markdown on every save so it can
+  /// never disagree with the content.
+  readingMinutes Int @default(1) @map("reading_minutes")
+
+  status PublishStatus @default(DRAFT)
+
+  /// Set when the post first goes live and preserved through later edits, so
+  /// republishing does not reshuffle the archive. Null while a draft.
+  publishedAt DateTime? @map("published_at")
+
+  /// Nullable with SetNull: removing an admin account must never delete the
+  /// posts they wrote. The public byline falls back to Profile.fullName.
+  authorId String?    @map("author_id")
+  author   AdminUser? @relation(fields: [authorId], references: [id], onDelete: SetNull)
+
+  tags BlogPostTag[]
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([status, publishedAt])
+  @@index([authorId])
+  @@map("blog_posts")
+}
+
+model Tag {
+  id        String        @id @default(cuid())
+  slug      String        @unique
+  name      String
+  posts     BlogPostTag[]
+  createdAt DateTime      @default(now()) @map("created_at")
+  updatedAt DateTime      @updatedAt @map("updated_at")
+
+  @@map("tags")
+}
+
+/// Explicit join table rather than an implicit many-to-many, so delete
+/// behaviour on both sides is stated rather than inferred.
+model BlogPostTag {
+  postId String @map("post_id")
+  tagId  String @map("tag_id")
+
+  post BlogPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  tag  Tag      @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([postId, tagId])
+  @@index([tagId])
+  @@map("blog_post_tags")
+}
+
+// ---------------------------------------------------------------------------
+// Uploads and audit
+// ---------------------------------------------------------------------------
+
+/// One row per uploaded file. Uploads are rows rather than bare paths so a file
+/// can be reused across records, carry its own alt text, and be traced back to
+/// whoever uploaded it.
+model Media {
+  id       String @id @default(cuid())
+  url      String
+  /// Provider-side path. Kept separately from the URL because deletion needs the
+  /// path, and parsing it back out of a CDN URL is brittle.
+  pathname String @unique
+  mimeType String @map("mime_type")
+
+  sizeBytes Int     @map("size_bytes")
+  width     Int?
+  height    Int?
+  alt       String?
+
+  uploadedById String?    @map("uploaded_by_id")
+  uploadedBy   AdminUser? @relation(fields: [uploadedById], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  profileAvatars Profile[]
+  seoOgImages    SeoSettings[]
+  projectCovers  Project[]
+  resumes        Resume[]
+  blogCovers     BlogPost[]    @relation("BlogPostCover")
+  blogOgImages   BlogPost[]    @relation("BlogPostOgImage")
+
+  @@index([createdAt])
+  @@map("media")
+}
+
+/// Append-only record of every mutation the dashboard performs.
+///
+/// This is the answer to "what changed and when did it break", which matters
+/// more than usual here because a single admin editing production content has no
+/// second pair of eyes. actorId is nullable with SetNull so the trail survives
+/// the deletion of the account that wrote it.
+model AuditLog {
+  id      String     @id @default(cuid())
+  actorId String?    @map("actor_id")
+  actor   AdminUser? @relation(fields: [actorId], references: [id], onDelete: SetNull)
+
+  /// "create" | "update" | "delete" | "publish" | "unpublish" | "reorder" |
+  /// "login" | "login_failed".
+  action String
+
+  /// The model name, e.g. "BlogPost".
+  entity   String
+  entityId String? @map("entity_id")
+
+  /// Changed fields only, as { field: { from, to } }. Never contains a password
+  /// hash or a token; the writer strips those fields.
+  diff Json?
+
+  ip        String?
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([entity, entityId])
+  @@index([createdAt])
+  @@map("audit_logs")
+}

@@ -25,11 +25,11 @@ depends on choices we have not made yet, so writing it now would only go stale.
 **1. Never paste a secret into our chat.**
 
 Not the database URL, not a client secret, not an API token. You put them in a
-file called `.env.local` on your own computer. I read that file when I run
+file called `.env` on your own computer. I read that file when I run
 commands — I never need to *see* the value, and it never ends up in our
 conversation history.
 
-**2. Never commit `.env.local`.**
+**2. Never commit `.env`.**
 
 I already added it to `.gitignore` in Phase 1, so Git will ignore it
 automatically. You do not need to do anything — just do not go out of your way
@@ -41,7 +41,7 @@ To check at any point that Git is genuinely ignoring it:
 git status --short
 ```
 
-If `.env.local` does **not** appear in that list, you are safe. If it *does*
+If `.env` does **not** appear in that list, you are safe. If it *does*
 appear, stop and tell me.
 
 ---
@@ -54,7 +54,7 @@ in these files. No shame in not knowing these; nobody is born knowing them.
 - **Environment variable** — a setting your app reads at startup instead of
   having it typed into the code. Used for anything secret, so the secret can
   change without changing the code, and so it never lands in Git.
-- **`.env.local`** — the plain text file where those settings live on your
+- **`.env`** — the plain text file where those settings live on your
   machine. One `NAME=value` per line. It stays on your computer.
 - **Connection string / URL** — one long line of text containing everything
   needed to reach your database: the address, the username, the password. It

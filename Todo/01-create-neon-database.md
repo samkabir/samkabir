@@ -107,13 +107,21 @@ In the project folder (`/home/samiul/Personal/samkabir`), create a new file
 called exactly:
 
 ```
-.env.local
+.env
 ```
 
 The leading dot matters. In VS Code: right-click in the file explorer →
-**New File** → type `.env.local`.
+**New File** → type `.env`.
 
-Paste this in, replacing the example values with your real strings:
+Or, quicker, copy the template I have already committed — it has every variable
+name in it with the values left blank:
+
+```bash
+cp .env.example .env
+```
+
+Then fill in the two database lines. If you created the file by hand instead,
+paste this in, replacing the example values with your real strings:
 
 ```bash
 # Database — from Neon. Never commit this file.
@@ -141,7 +149,7 @@ Run this in the terminal, from the project folder:
 git status --short
 ```
 
-**`.env.local` must NOT appear in the output.** If it does not appear, Git is
+**`.env` must NOT appear in the output.** If it does not appear, Git is
 correctly ignoring it and you are safe. If it *does* appear, stop and tell me
 before committing anything.
 
@@ -149,15 +157,18 @@ Then confirm the file is readable and shaped right — this prints only the
 variable *names*, never the secret values, so it is safe output:
 
 ```bash
-grep -o '^[A-Z_]*' .env.local
+grep -o '^[A-Z_]*' .env
 ```
 
-You should see exactly:
+You should see at least these two:
 
 ```
 DATABASE_URL
 DIRECT_URL
 ```
+
+If you copied `.env.example`, you will see all eight names. That is fine — the
+other six stay empty until tasks 02 and 03.
 
 ---
 
@@ -166,11 +177,18 @@ DIRECT_URL
 Say **"task 01 done"** and I will:
 
 1. Verify I can reach the database.
-2. Delete this file from `Todo/`.
-3. Start Phase 2 — writing the schema and running the first migration.
+2. Apply the migration I have already written — it creates all 16 tables.
+3. Run `npm run db:smoke`, which writes a row into every table, checks the
+   relationships behave as designed, and deletes everything it created. That is
+   the point where we know the database is genuinely correct and not just
+   connected.
+4. Delete this file from `Todo/`.
+
+The schema and the migration are already written and committed, so this is the
+only thing standing between here and a working database.
 
 You do not need to give me the connection string. My commands read
-`.env.local` directly from your disk.
+`.env` directly from your disk.
 
 ---
 

@@ -7,13 +7,22 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
-    "lint:fix": "eslint . --fix"
+    "lint:fix": "eslint . --fix",
+    "postinstall": "prisma generate",
+    "db:generate": "prisma generate",
+    "db:migrate": "prisma migrate dev",
+    "db:migrate:deploy": "prisma migrate deploy",
+    "db:migrate:status": "prisma migrate status",
+    "db:push": "prisma db push",
+    "db:studio": "prisma studio",
+    "db:smoke": "node scripts/db-smoke.mjs"
   },
   "dependencies": {
     "@emotion/react": "^11.10.5",
     "@emotion/styled": "^11.10.5",
     "@mui/icons-material": "^5.11.0",
     "@mui/material": "^5.11.7",
+    "@prisma/client": "^6.19.3",
     "aos": "^3.0.0-beta.6",
     "next": "^16.2.3",
     "prop-types": "^15.8.1",
@@ -25,6 +34,7 @@
     "eslint": "^9.39.5",
     "eslint-config-next": "^16.3.2",
     "postcss": "^8.4.21",
+    "prisma": "^6.19.3",
     "tailwindcss": "^3.2.4"
   }
 }

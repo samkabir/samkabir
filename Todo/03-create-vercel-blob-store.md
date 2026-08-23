@@ -78,7 +78,7 @@ one-click **Copy Snippet** button — either is fine.
 
 ## Step 4 — Add it to your file
 
-Open `.env.local` and **add to the bottom**, keeping everything already there:
+Open `.env` and **add to the bottom**, keeping everything already there:
 
 ```bash
 # File storage — Vercel Blob
@@ -94,10 +94,10 @@ Save.
 Names only, no values — safe to share:
 
 ```bash
-grep -o '^[A-Z_]*' .env.local
+grep -o '^[A-Z_]*' .env
 ```
 
-You should now see all eight:
+All eight should now have values:
 
 ```
 DATABASE_URL
@@ -116,7 +116,7 @@ And once more:
 git status --short
 ```
 
-`.env.local` must **not** appear.
+`.env` must **not** appear.
 
 ---
 

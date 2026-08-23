@@ -137,7 +137,7 @@ dialog too early you have not lost anything.
 
 ## Step 6 — Add them to your file
 
-Open the same `.env.local` you made in task 01 and **add these lines to the
+Open the same `.env` you made in task 01 and **add these lines to the
 bottom** — do not delete what is already there:
 
 ```bash
@@ -181,10 +181,11 @@ This prints only the variable **names**, never the values, so the output is
 safe to share:
 
 ```bash
-grep -o '^[A-Z_]*' .env.local
+grep -o '^[A-Z_]*' .env
 ```
 
-You should see all six:
+All six of these should now have values (if you copied `.env.example`, all
+eight names are listed — the last two stay empty until task 03):
 
 ```
 DATABASE_URL
@@ -202,7 +203,7 @@ And confirm Git is still ignoring the file:
 git status --short
 ```
 
-`.env.local` must **not** appear.
+`.env` must **not** appear.
 
 ---
 

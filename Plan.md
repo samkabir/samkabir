@@ -16,7 +16,7 @@ dashboard, so content is managed through a UI instead of by editing
 | Backend | Next.js API routes | Next.js already *is* a backend. One repo, one deploy, no CORS, no second service to host or secure. |
 | Router | Pages Router (stay) | The App Router in Next 16 needs React 19; this project is pinned to React 18.2 with MUI 5.11, which does not officially support React 19. Staying avoids a React 18→19 + MUI 5→7 migration that risks the existing design. Pages Router still gives SSG, ISR, on-demand revalidation and API routes. |
 | Database | Neon Postgres | Strongest genuinely-free Postgres: 0.5 GB, no credit card, auto-suspends to zero and wakes on connection. |
-| ORM | Prisma | Versioned SQL migrations and seeding were explicit requirements. The schema file doubles as documentation. |
+| ORM | Prisma, pinned to 6.x | Versioned SQL migrations and seeding were explicit requirements; the schema file doubles as documentation. Pinned to v6 because v7 requires a TypeScript config file, `dotenv` and a driver adapter — see [ADR 0001](docs/adr/0001-orm-and-prisma-version.md). |
 | Auth | NextAuth v4 | The Pages-Router-native version. Google + Credentials in one config, httpOnly signed cookies, CSRF built in. |
 | Password hashing | bcryptjs | Pure JS, no native build step — so it cannot hit the class of problem that broke the build in Phase 1. |
 | Validation | Zod | One schema per entity, imported by both the dashboard form and the API handler. |
@@ -110,10 +110,66 @@ measured against.**
 
 ---
 
-## Phase 2 — Database design and schema
+## Phase 2 — Database design and schema ✅ SCHEMA COMPLETE · ⏸ MIGRATION PENDING
 
 **Objective.** Turn the content model into a Prisma schema with a first
 migration, verified against a live database.
+
+**Done.** Prisma installed and pinned to **6.19.3**; `prisma/schema.prisma`
+written — 16 models, 3 enums, 12 foreign keys; initial migration SQL generated
+and committed; `lib/prisma.js` singleton; `scripts/db-smoke.mjs`; `db:*` scripts;
+ADRs 0001 and 0002.
+
+```
+npx prisma validate   →  the schema at prisma/schema.prisma is valid
+npx prisma generate   →  16 models, 3 enums in the generated client
+npm run build         →  compiled in 3.6s, 3 routes prerendered
+npm run lint          →  0 errors, 3 warnings (unchanged from Phase 1)
+```
+
+**Still pending, and it is the only thing left:** applying the migration to a
+real database, which needs `Todo/01-create-neon-database.md` done. On
+`task 01 done`: `npm run db:migrate:deploy` then `npm run db:smoke`.
+
+The migration was generated with `prisma migrate diff --from-empty`, which needs
+no database, rather than `migrate dev`, which does. Same SQL either way — it
+means the schema is reviewable and committed now instead of after the credentials
+arrive.
+
+**Five deviations from this plan, each deliberate.**
+
+1. **Prisma pinned to v6, not `latest`.** `prisma@latest` is 7.9.1, which removes
+   `url` and `directUrl` from the schema and requires a `prisma.config.ts`,
+   `dotenv`, and a driver adapter — a TypeScript config file and three extra
+   packages, in a project with no TypeScript. See
+   [ADR 0001](docs/adr/0001-orm-and-prisma-version.md).
+
+2. **`PublishStatus` on everything**, replacing the sketch's mix of `status`,
+   `isPublished` and `isVisible`. A mixed convention is how a draft leaks. See
+   [ADR 0002 §3](docs/adr/0002-database-schema.md).
+
+3. **`.env`, not `.env.local`.** The Prisma CLI reads `.env` and does not read
+   `.env.local`; Next.js reads both. One file both tools see beats two files plus
+   `dotenv-cli` to bridge them. Both are gitignored. `Todo/` and `.env.example`
+   updated accordingly.
+
+4. **`db:seed` deferred to Phase 7**, where the seed script is actually written.
+   A script entry pointing at a file that does not exist is a broken script, not
+   a placeholder.
+
+5. **`OAuthAccount` is ours, not `@next-auth/prisma-adapter`'s shape.** The
+   adapter persists a user row during the OAuth handshake, which is the wrong
+   order given the requirement that a rejected sign-in leave no trace. See
+   [ADR 0002 §5](docs/adr/0002-database-schema.md).
+
+**Fields added beyond the sketch**, all from re-reading the components rather
+than from the data files: `Profile.showLeetcode` (the LeetCode block is an open
+question, so it needs a switch); `SectionCopy.navLabel` / `anchor` / `showInNav`
+(the nav says "Work" where the section says "Some Projects I worked on...", and
+both labels were duplicated across two files); `Project.isNda` (five commented-out
+entries carry an NDA disclaimer in their description); `Media.pathname` unique
+(deletion needs the provider path, and parsing it back out of a CDN URL is
+brittle).
 
 **Blocked on:** `Todo/01-create-neon-database.md`.
 
@@ -133,6 +189,11 @@ migration, verified against a live database.
 - **Result:** a versioned schema and a reproducible `migrate` path.
 
 ### The data model
+
+> **Superseded by the real thing.** `prisma/schema.prisma` is now authoritative,
+> and it is commented. The sketch below is kept as the record of what was planned
+> before the schema was written; where the two differ, the schema is right and the
+> difference is explained in Phase 2's deviations above.
 
 Four deliberate departures from the current static shape:
 
