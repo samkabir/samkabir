@@ -1,116 +1,137 @@
-# Task 04 — Make the Blob store public
+# Task 04 — Create a public Blob store
 
 **Needed for:** uploads to work at all. **This is blocking right now.**
 
-**Time:** about 2 minutes.
+**Time:** about 3 minutes.
 
-**Cost:** free. This is a setting, not a plan change.
-
----
-
-## What happened
-
-Task 03 was done correctly — the store exists and the token works. But Vercel
-now creates Blob stores with **private** access by default, and I only found out
-when the first real upload came back with:
-
-```
-Vercel Blob: Cannot use public access on a private store.
-```
-
-That is not something either of us could have known from the dashboard; the
-setting is not mentioned during creation. My instructions in task 03 didn't
-mention it because when I wrote them, public was the default.
+**Cost:** free.
 
 ---
 
-## Why it has to be public
+## Where this stands
 
-A private blob has no publicly readable URL. Reading one requires an
-authenticated call through Vercel's SDK.
+You checked the store's settings and found:
 
-Your portfolio is a public website. Every project screenshot on your home page,
-every blog cover image, and your CV all have to be readable by someone who is
-not signed in — that is the entire point of them. With a private store, each of
-those would have to be fetched through your own server on every request, which
-would be slower, would burn through the free tier's function invocations, and
-would stop the images being cached by Vercel's CDN.
+> **Store Access — Private.** This is a private store. Blobs uploaded here
+> require a token to read. Use this for sensitive data. **The access mode cannot
+> be changed after creation.**
 
-Nothing here is secret. These are files you are deliberately publishing.
+So there is nothing to toggle. The store has to be replaced. That is the whole
+task, and it is quick — the store is empty, so nothing is lost.
 
----
-
-## Step 1 — Open the store
-
-1. Go to **https://vercel.com/dashboard**
-2. Click **Storage** in the top navigation.
-3. Click your store, **portfolio-media**.
+Task 03 was done correctly. Vercel changed its default so that new stores are
+private, and there was no way to know from the creation screen.
 
 ---
 
-## Step 2 — Find the access setting
+## Why a private store cannot work here
 
-Look for a **Settings** tab within the store, and an entry mentioning
-**Access**, **Public access**, or **Store access**. Switch it to **public**.
+A private blob has no publicly readable URL — reading one requires an
+authenticated call through Vercel's SDK, using your token.
 
-The wording and location move around, so if you cannot find it, don't hunt for
-more than a minute — go to Step 3 instead.
+Your portfolio is a public website. Every project screenshot on the home page,
+every blog cover, and your CV have to be readable by someone who is not signed
+in and does not have your token. That is the entire point of them.
 
----
+**I did consider keeping the private store** and serving every file through your
+own server instead, so you know the recommendation is informed rather than
+lazy. It would work, and I decided against it: it means a serverless function
+runs for every image that is not already cached, it adds a round trip to a page
+whose whole job is loading fast, it spends free-tier invocations on serving
+static pictures, and it is a permanent piece of extra machinery to maintain — all
+to avoid three minutes of clicking today.
 
-## Step 3 — If it cannot be changed
-
-Access may be fixed at creation time. If there is no setting to change, make a
-new store:
-
-1. **Storage** → **Create** → **Blob**.
-2. Name it `portfolio-media-public`.
-3. **Look for a public/private choice during creation and pick public.**
-4. Same region as before.
-5. Create it, then open it and copy the new `BLOB_READ_WRITE_TOKEN`.
-6. In `.env.local`, **replace** the existing `BLOB_READ_WRITE_TOKEN` value with
-   the new one. Keep everything else.
-
-> Same rule as always: the token is a password. Don't paste it into our chat.
-
-You can delete the old private store afterwards — nothing is stored in it. I
-already cleaned up everything my testing put there, and I confirmed it is empty.
+Nothing being uploaded is sensitive. These are files you are deliberately
+publishing.
 
 ---
 
-## Step 4 — Check
+## Step 1 — Create a new store
+
+1. Go to **https://vercel.com/dashboard** → **Storage**.
+2. Click **Create Database** (or **Create Store**) → **Blob**.
+3. Name it `portfolio-media-public`.
+4. **Look for the access setting and choose public.** This is the only step
+   that matters, and it is the one that cannot be fixed later. If you are not
+   certain which you picked, stop and check before continuing — the store's
+   Settings tab will say `Store Access: Public`.
+5. Region: the same one you chose before.
+6. Create.
+
+> **If there is no public option at all**, stop and tell me. That would mean
+> Vercel has stopped offering public stores, and we switch to **Cloudinary** —
+> free indefinitely, no card. I built the storage layer so that it is the only
+> file that knows which provider is in use, so that swap is a one-file change.
+> This is a planned fallback, not a problem.
+
+---
+
+## Step 2 — Copy the new token
+
+Open the new store, find `BLOB_READ_WRITE_TOKEN`, and copy its value. It starts
+with `vercel_blob_rw_`.
+
+> Still a password. Don't paste it into our chat.
+
+---
+
+## Step 3 — Replace the old value
+
+Open `.env.local` and **replace** the existing `BLOB_READ_WRITE_TOKEN` value
+with the new one. Keep every other line as it is — you are changing one value,
+not adding a line.
+
+Save.
+
+---
+
+## Step 4 — Delete the old store
+
+Go back to **Storage**, open `portfolio-media`, and delete it.
+
+Safe to do: it is empty. I cleaned up everything my testing put there and
+confirmed the store held zero objects.
+
+This is worth doing rather than leaving it — an unused private store next to a
+used public one is exactly the kind of thing that leads to pasting the wrong
+token in six months.
+
+---
+
+## Step 5 — Check
 
 ```bash
 grep -o '^[A-Z_]*' .env.local
 git status --short
 ```
 
-Eight names, and no `.env.local` in the git output.
+Still eight names, and `.env.local` must not appear in the git output.
 
 ---
 
-## Step 5 — Tell me
+## Step 6 — Tell me
 
 Say **"task 04 done"** and I will re-run the upload verification against the
-real store — including that an uploaded file is genuinely fetchable at a public
-URL, which is the one thing I could not confirm — and delete this file.
+new store — including the one check I could not perform, that an uploaded file
+is genuinely readable at a public URL by someone with no token — and delete this
+file.
 
 ---
 
-## What I verified in the meantime
+## What is already verified
 
-So you know this isn't blocked on guesswork. I pointed the code at the private
-store temporarily and ran the full upload flow end to end — **39 checks, all
-passing**: real files uploading, byte-level type checking rejecting a PDF renamed
-`.png`, oversized uploads refused, the audit trail, `/cv` redirecting to the
-active CV, and deletion refusing to remove the file behind a live CV. Then I
-reverted the code and cleaned the store back to empty.
+So you know this is not blocked on guesswork. I pointed the code at the private
+store temporarily and ran the whole upload flow end to end — **39 checks, all
+passing**: real files uploading with the right type, size and dimensions;
+byte-level checking refusing a PDF renamed `.png`; oversized uploads refused;
+the audit trail; `/cv` redirecting to the active CV; and deletion refusing to
+remove the file behind a live CV. Then I reverted the code and left the store
+empty.
 
-The only untested step is "the URL is publicly readable", which is precisely what
-this task fixes.
+The only untested step is the one this task unblocks.
 
-That run also found a real bug in my own code, which is now fixed: media deletion
-removed the stored file *before* the database row, so when the database correctly
-refused to delete a file still in use by your CV, the file was already gone and
-the row was left pointing at nothing. The order is now row first, file second,
-with a test that fails if anyone reverses it.
+That run also found a real bug in my own code, now fixed: media deletion removed
+the stored file *before* the database row, so when the database correctly refused
+to delete a file still in use by your CV, the file was already gone and the row
+was left pointing at nothing. It is now row first, file second, with a test that
+fails if anyone reverses it.

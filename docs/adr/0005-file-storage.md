@@ -206,7 +206,14 @@ invocation per image.
 
 Public access is therefore required rather than worked around, and `putObject`
 now translates that error into an actionable 503 instead of a generic 500.
-`Todo/04` asks the user to flip the setting.
+
+The store's access mode is **fixed at creation** — Vercel's own settings page
+says so — so the store has to be replaced rather than reconfigured. `Todo/04`
+covers that. Serving every file through an authenticated proxy route was
+considered as the alternative and rejected: it would run a serverless function
+for every uncached image, add a round trip to pages whose job is loading fast,
+spend free-tier invocations serving static pictures, and leave a permanent piece
+of machinery to maintain — to avoid recreating an empty store once.
 
 Everything else was verified by pointing the code at the private store
 temporarily: 39 end-to-end checks, all passing, covering real uploads, byte-level
