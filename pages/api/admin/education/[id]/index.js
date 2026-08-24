@@ -1,0 +1,5 @@
+// Route file: mounts the shared handler. All behaviour — method allowlist, auth,
+// validation, audit — lives in lib/api. See lib/api/handler.js.
+import { educationResource } from '@/lib/api/resources/education';
+
+export default educationResource.item;
