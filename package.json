@@ -10,12 +10,13 @@
     "lint:fix": "eslint . --fix",
     "postinstall": "prisma generate",
     "db:generate": "prisma generate",
-    "db:migrate": "prisma migrate dev",
-    "db:migrate:deploy": "prisma migrate deploy",
-    "db:migrate:status": "prisma migrate status",
-    "db:push": "prisma db push",
-    "db:studio": "prisma studio",
-    "db:smoke": "node scripts/db-smoke.mjs"
+    "db:migrate": "node scripts/with-env.mjs prisma migrate dev",
+    "db:migrate:deploy": "node scripts/with-env.mjs prisma migrate deploy",
+    "db:migrate:status": "node scripts/with-env.mjs prisma migrate status",
+    "db:migrate:reset": "node scripts/with-env.mjs prisma migrate reset",
+    "db:push": "node scripts/with-env.mjs prisma db push",
+    "db:studio": "node scripts/with-env.mjs prisma studio",
+    "db:smoke": "node scripts/with-env.mjs node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/db-smoke.mjs"
   },
   "dependencies": {
     "@emotion/react": "^11.10.5",
