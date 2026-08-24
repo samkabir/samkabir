@@ -195,7 +195,7 @@ the suite.
   real form in Phase 6, so they are deliberately dumb: they own the upload and
   hand back a `Media` row, and know nothing about which entity it belongs to.
 
-## Blocked on a setting, not on code
+## The store had to be recreated
 
 Vercel now creates Blob stores with **private** access by default, which only
 surfaced when the first real upload returned
@@ -215,8 +215,11 @@ for every uncached image, add a round trip to pages whose job is loading fast,
 spend free-tier invocations serving static pictures, and leave a permanent piece
 of machinery to maintain — to avoid recreating an empty store once.
 
-Everything else was verified by pointing the code at the private store
-temporarily: 39 end-to-end checks, all passing, covering real uploads, byte-level
-rejection, the size cap, the audit trail, `/cv`, and the RESTRICT guard. Then
-reverted, and the store confirmed empty. The single unverified step is that an
-uploaded URL is publicly readable — which is exactly what `Todo/04` fixes.
+**Resolved.** A public store was created and the token replaced. Re-verified
+against it end to end — 41 checks, all passing — including the parts that were
+previously impossible: an uploaded file returns 200 to a caller with no token,
+its bytes round-trip identically, it is served with the sniffed content type and
+a one-year immutable cache, the URL is not on the `.private.blob` host, and an
+anonymous request to `/cv` receives the PDF itself. `npm run media:prune` was
+also exercised for real, in both report and `--apply` modes, against a planted
+orphan.

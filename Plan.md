@@ -4,7 +4,7 @@ Turning this static portfolio into a database-backed site with a private admin
 dashboard, so content is managed through a UI instead of by editing
 `data/*.js` and redeploying.
 
-**Status:** Phases 1–5 complete bar one Vercel setting (`Todo/04`). Phase 6 next
+**Status:** Phases 1–5 complete and verified. Phase 6 next, nothing blocking
 (see [`Todo/01-create-neon-database.md`](Todo/01-create-neon-database.md)).
 
 ---
@@ -494,7 +494,7 @@ configuration, not user input.
 
 ---
 
-## Phase 5 — File storage and media ✅ COMPLETE (pending `Todo/04`)
+## Phase 5 — File storage and media ✅ COMPLETE
 
 **Objective.** Make uploads work end to end, safely. The CV, blog covers and
 project images all depend on it, so it blocks Phases 6–8.
@@ -576,15 +576,21 @@ happens second is the one whose failure must be survivable.** Upload stores then
 records, because an orphaned file is recoverable. Delete removes the row then the
 file, for the same reason in the other direction.
 
-**Blocked on a setting, not on code.** Vercel now creates Blob stores with
-private access by default — which surfaced only when the first real upload
+**One thing was not a code problem.** Vercel now creates Blob stores with
+private access by default, which surfaced only when the first real upload
 returned `Cannot use public access on a private store`. A private blob has no
 publicly readable URL, so every public screenshot would need proxying through a
-function, defeating CDN caching. `putObject` now translates that into an
-actionable 503 rather than a generic 500, and `Todo/04` asks the user to flip the
-setting. Everything else was verified by pointing at the private store
-temporarily, then reverting; the one unverified step is that an uploaded URL is
-publicly readable.
+function, defeating CDN caching — and the access mode is fixed at creation, so
+the store had to be recreated rather than reconfigured. `putObject` now
+translates that error into an actionable 503 rather than a generic 500.
+
+Resolved, and re-verified against the new public store — **41 checks, all
+passing**, including the parts that were previously impossible: an uploaded file
+returns 200 to a caller with no token, its bytes round-trip identically, it is
+served with the sniffed content type and a one-year immutable cache, the URL is
+not on the `.private.blob` host, and an anonymous request to `/cv` receives the
+PDF itself. `npm run media:prune` was exercised for real in both report and
+`--apply` modes against a planted orphan. Store and database left empty.
 
 ---
 

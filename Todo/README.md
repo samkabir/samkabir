@@ -14,15 +14,17 @@ left.
 | ~~01~~ | ~~Create the database~~ | ~~Phase 2~~ | **done** |
 | ~~02~~ | ~~Set up Google sign-in~~ | ~~Phase 4~~ | **done** |
 | ~~03~~ | ~~Create the file store~~ | ~~Phase 5~~ | **done** |
-| 04 | [Create a public Blob store](04-make-the-blob-store-public.md) | **Phase 5 — blocking now** | ~3 min |
+| ~~04~~ | ~~Create a public Blob store~~ | ~~Phase 5~~ | **done** |
 
 Task 04 was not in the original plan. Vercel changed its default so new Blob
 stores are private, which only surfaced when the first real upload failed — task
-03 was done correctly. The access mode is fixed at creation, so the store has to
-be recreated rather than reconfigured. It is empty, so nothing is lost.
+03 was done correctly. Because the access mode is fixed at creation, the store
+had to be recreated rather than reconfigured.
 
-The production deployment task gets written when we reach Phase 11; it depends on
-choices not yet made, so writing it now would only go stale.
+**Nothing is outstanding.** Every task in this folder is done, and the folder
+stays only for the production deployment task, which gets written when we reach
+Phase 11 — it depends on choices not yet made, so writing it now would only go
+stale.
 
 ---
 
