@@ -9,6 +9,15 @@ const nextConfig = {
     root: path.join(__dirname),
   },
   outputFileTracingRoot: path.join(__dirname),
+
+  async rewrites() {
+    return [
+      // `/cv` is the link that goes on a CV, in an email signature, on LinkedIn.
+      // It resolves through pages/api/cv.js to whichever Resume row is active,
+      // so replacing the file never breaks a link anyone has already shared.
+      { source: '/cv', destination: '/api/cv' },
+    ];
+  },
 }
 
 module.exports = nextConfig

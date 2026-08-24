@@ -20,7 +20,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "admin:create": "node scripts/with-env.mjs node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/create-admin.mjs",
-    "admin:reset-password": "node scripts/with-env.mjs node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/reset-password.mjs"
+    "admin:reset-password": "node scripts/with-env.mjs node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/reset-password.mjs",
+    "media:prune": "node scripts/with-env.mjs node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/prune-media.mjs"
   },
   "dependencies": {
     "@emotion/react": "^11.10.5",
@@ -28,6 +29,7 @@
     "@mui/icons-material": "^5.11.0",
     "@mui/material": "^5.11.7",
     "@prisma/client": "^6.19.3",
+    "@vercel/blob": "^2.8.0",
     "aos": "^3.0.0-beta.6",
     "bcryptjs": "^3.0.3",
     "next": "^16.2.3",

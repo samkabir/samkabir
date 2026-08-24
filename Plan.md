@@ -4,7 +4,7 @@ Turning this static portfolio into a database-backed site with a private admin
 dashboard, so content is managed through a UI instead of by editing
 `data/*.js` and redeploying.
 
-**Status:** Phase 1 complete. Phase 2 blocked on a Neon connection string
+**Status:** Phases 1–5 complete bar one Vercel setting (`Todo/04`). Phase 6 next
 (see [`Todo/01-create-neon-database.md`](Todo/01-create-neon-database.md)).
 
 ---
@@ -110,7 +110,7 @@ measured against.**
 
 ---
 
-## Phase 2 — Database design and schema ✅ SCHEMA COMPLETE · ⏸ MIGRATION PENDING
+## Phase 2 — Database design and schema ✅ COMPLETE
 
 **Objective.** Turn the content model into a Prisma schema with a first
 migration, verified against a live database.
@@ -127,9 +127,25 @@ npm run build         →  compiled in 3.6s, 3 routes prerendered
 npm run lint          →  0 errors, 3 warnings (unchanged from Phase 1)
 ```
 
-**Still pending, and it is the only thing left:** applying the migration to a
-real database, which needs `Todo/01-create-neon-database.md` done. On
-`task 01 done`: `npm run db:migrate:deploy` then `npm run db:smoke`.
+**Migration applied.** Neon project `samkabir-portfolio`, database `neondb`,
+region `ap-southeast-1`, pooled and direct connections both confirmed.
+
+```
+npm run db:migrate:deploy  →  20260823071807_init applied
+                              17 tables (16 models + _prisma_migrations)
+                              3 enums: ExperienceKind, PublishStatus, UserRole
+npm run db:migrate:status  →  database schema is up to date
+npm run db:smoke           →  27 passed, 0 failed
+```
+
+The smoke test is the part worth keeping: it confirmed against the real database
+that defaults fire (`Skill` → PUBLISHED, `BlogPost` → DRAFT, `Profile.id` →
+`singleton`), that both unique constraints reject duplicates, that
+`ON DELETE RESTRICT` stops a `Media` row being deleted while a `Resume` points at
+it, that deleting a `BlogPost` cascades to its tag joins, and that an `AuditLog`
+row survives deletion of its actor with `actorId` nulled rather than the row
+vanishing. Those are the rules that are easy to write down wrongly in a schema
+and only discover at runtime.
 
 The migration was generated with `prisma migrate diff --from-empty`, which needs
 no database, rather than `migrate dev`, which does. Same SQL either way — it
@@ -148,10 +164,17 @@ arrive.
    `isPublished` and `isVisible`. A mixed convention is how a draft leaks. See
    [ADR 0002 §3](docs/adr/0002-database-schema.md).
 
-3. **`.env`, not `.env.local`.** The Prisma CLI reads `.env` and does not read
-   `.env.local`; Next.js reads both. One file both tools see beats two files plus
-   `dotenv-cli` to bridge them. Both are gitignored. `Todo/` and `.env.example`
-   updated accordingly.
+3. **`.env.local`, bridged by `scripts/with-env.mjs`.** Phase 2 originally
+   chose `.env`, on the grounds that the Prisma CLI reads it and `.env.local`
+   only works for Next.js. That reasoning was sound but the change was never
+   carried into `Todo/` or `.env.example`, both of which still said
+   `.env.local` — so the `db:*` scripts would have run with no `DATABASE_URL`
+   the first time anyone used them. Resolved the other way instead: secrets stay
+   in `.env.local`, and every `db:*` script goes through
+   `scripts/with-env.mjs`, which calls Node's built-in `process.loadEnvFile` on
+   `.env` then `.env.local` before spawning the real command. `.env.local` wins
+   on conflict, matching Next.js precedence. No new dependency, one convention,
+   and a clear error instead of a Prisma stack trace when the file is missing.
 
 4. **`db:seed` deferred to Phase 7**, where the seed script is actually written.
    A script entry pointing at a file that does not exist is a broken script, not
@@ -254,7 +277,7 @@ becomes a migration; unlikely.
 
 ---
 
-## Phase 3 — Validation layer and admin API
+## Phase 3 — Validation layer and admin API ✅ COMPLETE
 
 **Objective.** Build the protected CRUD surface with one handler pattern, so
 every entity behaves identically and no route can forget its auth check.
@@ -275,6 +298,57 @@ every entity behaves identically and no route can forget its auth check.
   new unguarded route fails CI.
 - **Result:** a complete, tested, uniformly guarded API.
 
+**Done.** 12 validation modules in `lib/validation/`; `lib/api/handler.js`,
+`resource.js`, `errors.js`, `audit.js`, `slugs.js`; 12 resource definitions in
+`lib/api/resources/`; `lib/auth.js` denying all; 37 route files under
+`pages/api/admin/`; `lib/slug.js` and `lib/blog.js` helpers; 158 tests;
+[ADR 0003](docs/adr/0003-admin-api.md) and [docs/api.md](docs/api.md).
+
+```
+npm test       →  158 passed, 6 files
+npm run build  →  compiled in 1.8s, 37 API routes registered
+npm run lint   →  0 errors, 3 warnings (unchanged since Phase 1)
+```
+
+Verified additionally by a throwaway integration pass against the live Neon
+database with the guard mocked — 28 checks covering create/list/update/
+reorder/publish/delete, audit rows written in-transaction, slug derivation and
+collision, blog publish-date preservation, résumé versioning and activation,
+singleton upsert, and the RESTRICT mapping. Removed after running; the database
+was left empty.
+
+**One deviation from the plan, and it is an improvement.** The plan said the
+401 suite would assert "an enumerated list of every admin route". It globs
+`pages/api/admin/**/*.js` instead and asks each route which methods it serves
+via its own `Allow` header. A hand-written list is exactly as good as whoever
+last remembered to update it, and the failure mode is a new unguarded endpoint
+that no test mentions. Globbing means adding a route file adds it to the suite.
+
+**Three bugs found by the tests, none visible by reading the code.**
+
+1. **`Argument 'description' must not be null`.** The optional-text primitive
+   mapped every empty value to `null` — correct for a nullable column, wrong for
+   `Project.description` and `BlogPost.excerpt`, both `String @default("")` and
+   therefore NOT NULL. A valid create request produced a 500 with no field to
+   attach it to. Fixed with a separate `textOrEmpty` primitive, and
+   `tests/schemaAlignment.test.js` now reads `schema.prisma` and asserts the
+   general rule across every entity.
+
+2. **An empty PATCH body was accepted.** `partialOf` counted the keys of the
+   *parsed* object, but `.partial()` still applies `.default()` — so `{}` came
+   out with keys and passed, on every entity that has a default. The check now
+   runs against the raw body.
+
+3. **Whitespace broke email and URL validation.** `z.email()` and `z.url()`
+   reject a string with surrounding spaces, so trimming *after* the format check
+   rejected a pasted address that merely had a trailing space. Both now normalise
+   first and validate second.
+
+**Deferred deliberately:** deleting the file at the storage provider when a
+Media row is deleted. That needs the storage layer from Phase 5; the dangerous
+case — removing the file a live CV points at — is already blocked by a database
+RESTRICT.
+
 ### Conventions every handler follows
 
 Method allowlist → `withAdmin()` → Zod parse → Prisma call. Never a different
@@ -282,7 +356,7 @@ order. Nothing echoes a `passwordHash`. No admin response is cacheable.
 
 ---
 
-## Phase 4 — Authentication
+## Phase 4 — Authentication ✅ COMPLETE
 
 **Objective.** Google and email/password sign-in for exactly one allowlisted
 identity, with no registration path and no plaintext password anywhere.
@@ -306,6 +380,95 @@ identity, with no registration path and no plaintext password anywhere.
 - **Risks:** OAuth redirect URIs differ between local and production and are a
   common launch failure. Both get documented and tested.
 - **Result:** only you can sign in, by either method. No secret in the repo.
+
+**Done.** `lib/authOptions.js` (Google + Credentials, three gates), `lib/auth.js`
+(real `getSessionUser` with a per-request allowlist re-check),
+`lib/adminEmails.js`, `lib/password.js`, `lib/rateLimit.js`,
+`lib/returnPath.js`, `lib/api/resources/account.js`,
+`pages/api/auth/[...nextauth].js`, `pages/admin/login.js`,
+`pages/admin/index.js` (placeholder), `proxy.js`, `scripts/prompt.mjs`,
+`scripts/create-admin.mjs`, `scripts/reset-password.mjs`, and
+[ADR 0004](docs/adr/0004-authentication.md).
+
+```
+npm test       ->  213 passed, 7 files (53 new, auth)
+npm run build  ->  compiled in 2.3s, 40 API routes + proxy
+npm run lint   ->  0 errors, 3 warnings (unchanged since Phase 1)
+```
+
+Verified additionally by a throwaway end-to-end pass against a running dev
+server - **38 checks, all passing** - driving the real NextAuth HTTP flow with a
+cookie jar: unauthenticated 401 on GET and POST with nothing written; `/admin`
+redirecting to the login page; a wrong password issuing no cookie and revealing
+nothing; failures recorded without the attempted password or the guessed
+address; correct sign-in issuing an `HttpOnly` `SameSite=Lax` cookie carrying a
+JWT rather than the account id; authenticated reads and writes attributed to the
+signed-in admin in the audit log; `lastLoginAt` stamped; the dashboard rendering
+and `noindex`; and sign-out invalidating the session. Removed after running; the
+database was left empty.
+
+Two properties were worth confirming precisely rather than loosely, and both
+were:
+
+* **Revocation actually works.** A live, cryptographically valid session cookie
+  is refused the moment the address stops matching `ADMIN_EMAILS`, and accepted
+  again when restored. Without the per-request re-check this would have taken up
+  to seven days.
+* **The rate limit blocks a correct password.** Verified step by step: the right
+  password succeeds at four recorded failures and is refused at five, with
+  `Too many failed sign-in attempts. Wait 15 minutes and try again.` reaching
+  the client. The first version of that assertion was a loose regex that could
+  have passed for the wrong reason, so it was redone as an exact check.
+
+**Three deviations from this plan, each deliberate.**
+
+1. **No `@next-auth/prisma-adapter`.** The plan listed it as a package; the
+   schema was designed in Phase 2 not to match its shape, and this is why. The
+   adapter persists a user row during the OAuth handshake, before application
+   logic runs - so a rejected stranger would leave a row behind, contradicting
+   the requirement that a rejected sign-in leave no trace. The `signIn` callback
+   writes the link row itself, after the allowlist passes. Asserted directly: a
+   rejected Google sign-in never calls `adminUser.create`.
+
+2. **Rate limiting counts audit rows instead of holding state in memory.** The
+   plan said "rate-limited credentials endpoint" without saying how. An
+   in-memory `Map` would be close to useless on Vercel - per-instance memory,
+   forgotten on every cold start - so a limit that only held locally would read
+   as protection while providing little. Failures are already written to
+   `AuditLog`; counting recent rows works across instances and adds no table and
+   no dependency.
+
+3. **`proxy.js`, not `middleware.js`.** Next.js 16 deprecated the `middleware`
+   file convention. Building on a deprecated convention on day one is a
+   migration scheduled for an inconvenient moment.
+
+**Four bugs and surprises, all found by tests rather than by reading.**
+
+1. **`CredentialsProvider` discards the `authorize` you pass it.** It returns
+   `{ authorize: () => null, options }` and NextAuth merges the real function in
+   at request time. The first test suite called `provider.authorize(...)`, which
+   exercised NextAuth's stub, returned `null`, and asserted nothing.
+   `authorizeCredentials` is now exported and tested directly.
+
+2. **bcrypt silently truncates at 72 bytes** - confirmed by experiment, not
+   assumed: a 90-character passphrase and a truncated variant sharing its first
+   72 bytes authenticate identically. The policy now rejects anything longer,
+   counted in *bytes*, since emoji and non-Latin scripts reach the limit far
+   sooner than their length suggests.
+
+3. **A test counted `adminUser.update` calls and failed for the wrong reason.**
+   `recordLoginSuccess` also updates the row to stamp `lastLoginAt`, so "did
+   Google overwrite the dashboard name" had to be asserted on *what* was written.
+
+4. **Every CLI run printed a Node warning.** `MODULE_TYPELESS_PACKAGE_JSON`, from
+   importing ESM `lib/*.js` files. Adding `"type": "module"` would break
+   `next.config.js`, `tailwind.config.js` and `postcss.config.js`, all CommonJS,
+   so the single warning is silenced instead.
+
+**Not covered by automated tests:** completing a real Google OAuth round trip,
+which needs a real Google account and a browser. The callback logic is tested
+directly - including that a non-allowlisted address is rejected and creates no
+row - but the happy path needs a human click. Flagged rather than glossed.
 
 ### Three independent gates
 
@@ -331,7 +494,7 @@ configuration, not user input.
 
 ---
 
-## Phase 5 — File storage and media
+## Phase 5 — File storage and media ✅ COMPLETE (pending `Todo/04`)
 
 **Objective.** Make uploads work end to end, safely. The CV, blog covers and
 project images all depend on it, so it blocks Phases 6–8.
@@ -354,6 +517,74 @@ project images all depend on it, so it blocks Phases 6–8.
   vendor dependency, so it stays behind an interface.
 - **Result:** any image or PDF uploadable from the dashboard and served from a
   stable URL. `/cv` becomes a permanent shareable link.
+
+**Done.** `lib/uploads.js` (magic bytes, size caps, key generation, dimension
+parsing), `lib/storage.js` (the only file importing the vendor SDK),
+`lib/mediaRelations.js`, `lib/api/resources/upload.js`,
+`pages/api/admin/media/upload.js`, `pages/api/cv.js` plus the `/cv` rewrite,
+`scripts/prune-media.mjs`, `components/admin/{useUpload,FileField,ImageField}.js`,
+and [ADR 0005](docs/adr/0005-file-storage.md).
+
+```
+npm test       ->  271 passed, 11 files (44 new: uploads, media relations, /cv, delete ordering)
+npm run build  ->  compiled in 2.2s
+npm run lint   ->  0 errors, 3 warnings (unchanged since Phase 1)
+```
+
+Verified additionally by a throwaway end-to-end pass against a running dev
+server and the live Blob store — **39 checks, all passing**: real files
+uploading with correct MIME type, byte size, dimensions and attribution; a PDF
+renamed `.png` refused with a message naming what it really is; HTML declared as
+an image refused; SVG refused with a reason; an oversized upload refused with
+413; no rejected upload leaving a row or a file behind; the audit trail recording
+the original filename; `/cv` 404ing before publication and redirecting after;
+and deletion refusing to remove the file behind a live CV. Removed after running;
+database and store both confirmed empty.
+
+**One deviation from this plan, and it is a reversal of the plan's own risk
+mitigation.** The plan proposed client-direct upload with a signed token, to
+avoid the serverless request-body limit. Rejected, because it conflicts with the
+requirement listed two bullets above it: Vercel Blob validates the *declared*
+content type, not the bytes, so magic-byte checking would become a delete-if-bad
+cleanup *after* the file is stored — and `onUploadCompleted` needs a publicly
+reachable URL, so that path would be untestable locally. Uploads are proxied and
+capped at 4 MB instead. The cap is not a real constraint here: the largest file
+in the repository is a 435 KB screenshot.
+
+**Two other choices worth recording.** The request body is raw bytes rather than
+multipart, which removes the need for a multipart parser dependency entirely. And
+image dimensions are parsed by hand for PNG, GIF, JPEG and all three WebP
+sub-formats rather than via `sharp` — a native module, in a project that lost an
+afternoon in Phase 1 to a truncated native binary raising SIGBUS, and which
+Next.js only provides transitively. Verified against all 23 real asset files in
+the repository: every one identified, every image's dimensions read.
+
+**One real bug, found by the end-to-end run and worth stating in full** because
+the reasoning that produced it was superficially sound. Media deletion removed
+the stored file *before* the row, on the grounds that a row pointing at a missing
+file is worse than a file with no row — true, but it forgot where the safety check
+lives. Deleting the file behind a live CV is prevented by `Resume.mediaId`'s
+`ON DELETE RESTRICT`, which Postgres evaluates when the **row** is deleted. So the
+sequence was: file deleted, row delete rejected with 409, transaction rolled back,
+row surviving and now pointing at nothing — the exact failure the ordering was
+chosen to prevent. Fixed with an `afterDelete` hook that runs only after the
+commit. `tests/deleteOrdering.test.js` asserts the sequence and was confirmed to
+fail when the bug is reintroduced.
+
+The general rule this produced, now written into the code: **whichever step
+happens second is the one whose failure must be survivable.** Upload stores then
+records, because an orphaned file is recoverable. Delete removes the row then the
+file, for the same reason in the other direction.
+
+**Blocked on a setting, not on code.** Vercel now creates Blob stores with
+private access by default — which surfaced only when the first real upload
+returned `Cannot use public access on a private store`. A private blob has no
+publicly readable URL, so every public screenshot would need proxying through a
+function, defeating CDN caching. `putObject` now translates that into an
+actionable 503 rather than a generic 500, and `Todo/04` asks the user to flip the
+setting. Everything else was verified by pointing at the private store
+temporarily, then reverting; the one unverified step is that an uploaded URL is
+publicly readable.
 
 ---
 

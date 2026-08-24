@@ -11,12 +11,17 @@ left.
 
 | # | Task | Needed for | Time |
 |---|---|---|---|
-| 01 | [Create the database](01-create-neon-database.md) | **Phase 2 — blocking right now** | ~5 min |
-| 02 | [Set up Google sign-in](02-set-up-google-sign-in.md) | Phase 4 | ~10 min |
-| 03 | [Create the file store](03-create-vercel-blob-store.md) | Phase 5 | ~5 min |
+| ~~01~~ | ~~Create the database~~ | ~~Phase 2~~ | **done** |
+| ~~02~~ | ~~Set up Google sign-in~~ | ~~Phase 4~~ | **done** |
+| ~~03~~ | ~~Create the file store~~ | ~~Phase 5~~ | **done** |
+| 04 | [Make the Blob store public](04-make-the-blob-store-public.md) | **Phase 5 — blocking now** | ~2 min |
 
-Task 04 (production deployment) gets written when we reach Phase 11 — it
-depends on choices we have not made yet, so writing it now would only go stale.
+Task 04 was not in the original plan. Vercel changed its default so new Blob
+stores are private, which only surfaced when the first real upload failed — task
+03 was done correctly. It is a two-minute setting change.
+
+The production deployment task gets written when we reach Phase 11; it depends on
+choices not yet made, so writing it now would only go stale.
 
 ---
 
@@ -25,11 +30,11 @@ depends on choices we have not made yet, so writing it now would only go stale.
 **1. Never paste a secret into our chat.**
 
 Not the database URL, not a client secret, not an API token. You put them in a
-file called `.env` on your own computer. I read that file when I run
+file called `.env.local` on your own computer. I read that file when I run
 commands — I never need to *see* the value, and it never ends up in our
 conversation history.
 
-**2. Never commit `.env`.**
+**2. Never commit `.env.local`.**
 
 I already added it to `.gitignore` in Phase 1, so Git will ignore it
 automatically. You do not need to do anything — just do not go out of your way
@@ -41,7 +46,7 @@ To check at any point that Git is genuinely ignoring it:
 git status --short
 ```
 
-If `.env` does **not** appear in that list, you are safe. If it *does*
+If `.env.local` does **not** appear in that list, you are safe. If it *does*
 appear, stop and tell me.
 
 ---
@@ -54,7 +59,7 @@ in these files. No shame in not knowing these; nobody is born knowing them.
 - **Environment variable** — a setting your app reads at startup instead of
   having it typed into the code. Used for anything secret, so the secret can
   change without changing the code, and so it never lands in Git.
-- **`.env`** — the plain text file where those settings live on your
+- **`.env.local`** — the plain text file where those settings live on your
   machine. One `NAME=value` per line. It stays on your computer.
 - **Connection string / URL** — one long line of text containing everything
   needed to reach your database: the address, the username, the password. It
