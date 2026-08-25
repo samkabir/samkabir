@@ -6,6 +6,13 @@ dashboard, so content is managed through a UI instead of by editing
 
 **Status:** Phases 1–6 complete. Phase 7 next, nothing blocking.
 
+One Phase 7 item was pulled forward because it was failing in the browser: the
+LeetCode call is now a cached server-side proxy at `/api/leetcode`
+(`lib/leetcode.js`). The old third-party service had been retired, and a dead
+host's error page carries no CORS headers — which is why it surfaced as a CORS
+error rather than a 503. Phase 7 still has to read the username from
+`Profile.leetcodeUsername` and honour `Profile.showLeetcode`.
+
 ---
 
 ## Locked decisions
@@ -699,71 +706,314 @@ through the ten screens or a new dev dependency. See
 ## Phase 7 — Seed the database and cut the public site over
 
 **Objective.** Move the public site from static imports to database-driven
-props, section by section, with no visible change.
+props, section by section, with no visible change to a visitor.
 
-- **Files:** `prisma/seed.js`; `pages/index.js` (add `getStaticProps`, remove
-  the loading gate); all 12 existing components (props instead of imports);
-  `lib/revalidate.js`, `pages/api/revalidate.js`.
-- **Frontend:** **markup is not redesigned** — each component's data source
-  changes, its JSX and classes do not. Rubik consolidated into one module
-  instead of three. The dead LeetCode call replaced with a cached server-side
-  proxy. Sensible fallbacks when a section is empty.
-- **Testing:** side-by-side visual diff of every section, desktop and mobile;
-  view-source confirms content is in the HTML rather than injected after
-  hydration; edit in the dashboard → reload → change is live; the seed runs
-  twice without duplicating rows.
-- **Risks:** this is the phase that can visibly break the site. One section
-  per commit, each verified before the next, static files retained until the
-  whole page is confirmed.
-- **Result:** the public portfolio renders from the database, looks identical,
-  and updates on save — no code change, no redeploy.
+**This is the phase that can visibly break the site.** Everything before it added
+machinery beside the portfolio; this one rewires the portfolio itself. Work in
+the order below, one commit per step, each verified before the next.
 
-### Migration strategy
+### Already done
 
-1. **Import, don't transcribe.** `prisma/seed.js` imports the existing arrays
-   and maps them onto the new models, so the migration is reviewable,
-   re-runnable code rather than a data-entry session.
-2. **Parse the timeline strings.** `'July 2025 - Present'` becomes
-   `startDate: 2025-07-01, isCurrent: true`. Both the en-dash and hyphen forms
-   appear in the source; the parser handles both and **fails loudly** on
-   anything it cannot read rather than guessing.
-3. **Fix identity.** Ignore the duplicate and gapped source ids entirely
-   (`data/projects.js` has two entries with `id: 1`; `data/experience.js` uses
-   `0,1,4,5,6`). Generate fresh ids, set `order` from array position to
-   preserve the current on-screen order exactly, and drop the unused `tag`
-   field.
-4. **Preserve the commented-out projects.** The five NDA entries in
-   `data/projects.js` are imported as `status: DRAFT` — nothing is lost, and
-   any can be published later. **Confirm this is wanted.**
-5. **Move the files.** Upload every image in `public/images/projects/` and the
-   resume PDF to Blob, creating `Media` rows and rewriting references.
-   `public/` keeps the logos and favicon only.
-6. **Cut over one section at a time**, diffing rendered output against the
-   current site before moving on.
-7. **Retire the static files last,** in a single commit, once every section is
-   verified. Git history keeps them recoverable.
+The LeetCode proxy this phase listed is finished: `/api/leetcode` queries
+LeetCode's GraphQL endpoint server-side and caches it at the edge. What remains
+for this phase is reading the username from `Profile.leetcodeUsername` instead of
+the constant in `lib/leetcode.js`, and hiding the block when
+`Profile.showLeetcode` is false.
 
-### What is currently hardcoded
+### Prerequisites
 
-More content lives inline in JSX than in `data/` — this is the full surface.
+- An admin account exists (`npm run admin:create`) — the dashboard is how the
+  seeded content gets checked.
+- `BLOB_READ_WRITE_TOKEN` points at the **public** store (Phase 5, Todo/04).
+- `npm run db:migrate:status` reports no pending migrations.
 
-| Content | Lives in | Becomes |
+---
+
+### Step 1 — `prisma/seed.js`
+
+**Import, do not transcribe.** The script imports the existing arrays and maps
+them onto the models, so the migration is reviewable, re-runnable code rather
+than a data-entry session that cannot be diffed.
+
+Wire it up as `prisma.seed` in `package.json` **and** as `npm run db:seed`
+through `scripts/with-env.mjs`, like every other database script — the Prisma CLI
+reads `.env`, and this project's credentials are in `.env.local`.
+
+**Idempotent, by `upsert` on a natural key.** Running it twice must not double
+the content. Use `slug` for Project, `name` for Skill, `key` for SectionCopy, the
+literal `singleton` for Profile and SeoSettings. Experience and Education have no
+natural unique column — give the script a `--reset` flag that deletes rows of
+those two models before inserting, and make plain runs skip them if any row
+exists. Never delete a `Media` row: files are pruned by `media:prune`, and a
+seed that deletes media would take the live CV with it.
+
+#### What goes in
+
+| Source | Count | Model |
 |---|---|---|
-| 19 skills | `data/skills.js` | `Skill` |
-| 5 full-time roles + bullets | `data/experience.js` | `Experience(FULL_TIME)` |
-| 2 contract roles + bullets | `data/contractualExperiences.js` | `Experience(CONTRACT)` |
-| 16 active + 5 commented projects | `data/projects.js` | `Project` |
-| Greeting, name, tagline | `MainComponent.js:23–44` | `Profile` |
-| Career objective paragraph | `AboutMe.js:46–50` | `Profile.bio` |
-| BRAC University + O/A Levels | `AboutMe.js:53–65` | `Education` |
-| LeetCode username, profile URL, popover copy | `AboutMe.js:14,116` | `Profile` + `SocialLink` |
-| LinkedIn, GitHub, Facebook (duplicated) | `SocialMediaLinks.js`, `Contact.js` | `SocialLink` |
-| Displayed email and mailto target | `SocialMediaLinks.js:24`, `Contact.js:37` | `Profile` |
-| Resume PDF path | `MainComponent.js:53` | `Resume` (active) |
-| Section headings + 00/01/10/11 numbering | Header, AboutMe, Experience, DemoProjects, Contact | `SectionCopy` |
-| Footer credit and attribution | `Footer.js:13–17` | `Profile` |
-| Page title and meta description | `index.js:27–30` | `SeoSettings` |
-| "Show first 3 projects" rule | `DemoProjects.js:14` | `Project.isFeatured` |
+| `data/skills.js` | 19 strings | `Skill` — `order` from array index, `status: PUBLISHED` |
+| `data/experience.js` | 5 roles | `Experience` `kind: FULL_TIME` |
+| `data/contractualExperiences.js` | 2 roles | `Experience` `kind: CONTRACT` |
+| `data/projects.js` | 16 active | `Project` `status: PUBLISHED` |
+| `data/projects.js` | 3 commented-out | `Project` `status: DRAFT` — **confirm with Samiul first** |
+| `AboutMe.js` prose + education bullets | 1 + 2 | `Profile.bio`, `Education` |
+| `MainComponent.js` greeting / name / headline | — | `Profile` |
+| `SocialMediaLinks.js` + `Contact.js` links | 3 (duplicated across both) | `SocialLink` — one row each |
+| `Footer.js` credit + attribution | — | `Profile.footerCredit`, `attributionLabel`, `attributionUrl` |
+| `index.js` title + description | — | `SeoSettings` |
+| Section headings | 6 | `SectionCopy` |
+
+#### The timeline parser — the one piece with real failure modes
+
+Seven strings, all of the form `Month YYYY <dash> Month YYYY|Present`:
+
+```
+July 2025 - Present            ← ASCII hyphen, U+002D
+May 2023 – June 2024           ← en dash, U+2013
+October 2022 – April 2023
+February 2022 – September 2022
+November 2021 – January 2022
+July 2024 – September 2024     ← contractual
+May 2023 – June 2024           ← contractual
+```
+
+Rules:
+
+- Split on `/\s*[-–—]\s*/`. **Both dash characters appear in the real data** and
+  a parser that handles only one silently produces a single-part string.
+- `Month YYYY` → the **first of that month at UTC noon**, matching what
+  `calendarDate()` does. The `@db.Date` columns hold days, and noon is what makes
+  a client in any timezone read back the same calendar day.
+- `Present` (case-insensitive) → `isCurrent: true`, `endDate: null`.
+- Anything else → **throw, naming the string and the record**. A parser that
+  guesses puts a wrong date on a CV, and nothing downstream would question it.
+- Set `timelineOverride: null`. The formatter reproduces these strings from the
+  dates; verify that before deciding otherwise (see the checklist).
+
+#### Identity, deliberately discarded
+
+`data/experience.js` uses ids `0, 1, 4, 5, 6` and `data/contractualExperiences.js`
+uses `0, 3` — gapped. `data/projects.js` has **two entries sharing `id: 1`**.
+Ignore all of them: generate fresh cuids, set `order` from array position so the
+current on-screen order is preserved exactly, and drop the unused `tag` field
+(`'One'`, `'Two'`, `'Five'` — a label for a tab index that no longer exists).
+
+#### Section copy — the six rows, with their current values
+
+The component renders `{numberLabel} {navLabel}` for the small accent line and
+`{heading}` for the large one, which is why Contact has both.
+
+| `key` | `numberLabel` | `heading` | `navLabel` | `anchor` | `showInNav` |
+|---|---|---|---|---|---|
+| `about` | `00.` | About Me | About | `about` | yes |
+| `skills` | `00.0` | Skill Stack | — | — | no |
+| `experience` | `01.` | Job Experiences | Experience | `exp` | yes |
+| `contractual` | `01.0` | Contractual Experiences | — | — | no |
+| `projects` | `10.` | Some Projects I worked on... | Work | `project` | yes |
+| `contact` | `11.` | Get In Touch | Contact | `contact` | yes |
+
+`contact.subheading` is `Feel free to contact me anytime.`
+
+`SECTION_KEYS` in `lib/validation/sectionCopy.js` already contains exactly these
+six. The nav order is about → experience → projects → contact; give `order`
+values that reproduce it.
+
+---
+
+### Step 2 — Move the assets into Blob
+
+A second script, `scripts/import-assets.mjs`, run once:
+
+- **19 project images** in `public/images/projects/` — 15 `.PNG`, 4 `.webp`,
+  7.2 MB total, largest 2.22 MB. All are **under the 4 MB upload cap**, so
+  nothing needs resizing.
+- **The CV**: `public/assets/Samiul_Kabir_Resume.pdf`, 82 KB, 2 pages. Creates a
+  `Media` row, then a `Resume` row, then activates it so `/cv` works.
+
+Go through `putObject` and `describeUpload` in `lib/storage.js` / `lib/uploads.js`
+rather than the SDK, so the same byte-level validation, the same generated keys
+and the same dimension parsing apply. The uppercase `.PNG` extensions do not
+matter: the storage key's extension comes from the file's bytes, so they all land
+as `.png` with no case-collision risk.
+
+Set `Media.alt` per image while doing this — the project name is a poor
+description ("Shades Sunglases" tells a screen reader nothing about a screenshot)
+and this is the only moment all 19 are in front of you.
+
+Record the mapping from `public/images/projects/...` to the new `Media.id` and
+use it to set each `Project.coverMediaId` in the same run.
+
+`public/` afterwards keeps only `images/Logo.png`, `images/Logo1.png` and the
+favicon. **Delete the originals in Step 7, not here** — git history keeps them,
+but the site is still reading them until the cutover is done.
+
+---
+
+### Step 3 — `lib/content.js`, the read layer
+
+One module, one exported function per section, each returning exactly the shape
+the component needs:
+
+```js
+getProfile()        getSectionCopy()     getSkills()
+getExperiences()    getProjects()        getSocialLinks()
+getEducation()      getSeoSettings()     getActiveResume()
+```
+
+Non-negotiable properties:
+
+1. **Every query filters `status: 'PUBLISHED'`.** This is the single predicate the
+   whole schema was shaped around. A section that forgets it publishes a draft,
+   and nobody notices until it is indexed. One module means one place to check.
+2. **Ordered explicitly** — `[{ order: 'asc' }, …]` with the same tiebreaker the
+   admin resource uses, or the dashboard's order and the site's order disagree.
+3. **Returns plain JSON.** `getStaticProps` cannot serialise a `Date`, and the
+   error names the field but not the cause. Convert at the boundary here, once,
+   rather than in each page.
+4. **Never imported by a client component.** It touches Prisma. Importing it into
+   a component pulls the client into the browser bundle and fails the build.
+
+A single `getPageContent()` that calls them inside one `prisma.$transaction([…])`
+is worth having: it is one round trip instead of nine, which matters on Neon's
+free tier where an idle database pays a wake-up cost on the first query.
+
+---
+
+### Step 4 — `pages/index.js`: `getStaticProps` and the loading gate
+
+Two changes, and the second is the reason this phase matters for anything other
+than editing convenience.
+
+**Add `getStaticProps` with `revalidate`.** Static generation with ISR: the page
+is HTML at the edge, and a save in the dashboard reaches it within the window
+without a redeploy. Start at `revalidate: 60`; Step 6 makes it immediate.
+
+**Remove the artificial loading gate.** `pages/index.js` currently renders
+`<Loading />` on the first paint and swaps in the real page from a `useEffect`,
+which means **the server-rendered HTML contains a spinner and nothing else** —
+7.2 MB of portfolio that no search engine can see. There is a `TODO(phase-7)`
+on it. Deleting it is the point of the phase as much as the CMS is; the
+`Loading` component itself can stay for use elsewhere.
+
+Guard the empty case: if `getPageContent()` returns no profile — a database that
+has not been seeded — render the section from its fallback rather than crashing
+the build. Keep the fallbacks until Step 7 and delete them with the static files.
+
+---
+
+### Step 5 — Components take props
+
+**The markup does not change.** Each component's data source changes; its JSX,
+its classes, its AOS attributes and its breakpoints do not. If a diff in this
+step touches a `className`, it is out of scope.
+
+| Component | Currently reads | Receives |
+|---|---|---|
+| `Header` | 4 hardcoded `<li>` | `sections` (those with `showInNav`) |
+| `MainComponent` | inline greeting, name, headline; `/assets/…pdf` | `profile`; the CV link becomes `/cv` |
+| `AboutMe` | `data/skills`, inline prose, inline education | `profile`, `skills`, `education`, `sectionCopy` |
+| `Experience` | `data/experience` | `experiences` (FULL_TIME) |
+| `ContractualExperiences` | `data/contractualExperiences` | `experiences` (CONTRACT) |
+| `DemoProjects` | `data/projects`, `.slice(0, 3)` | `projects`; the first three come from `isFeatured` |
+| `ProjectCard` | `e.image`, `e.name`, `e.github`, `e.liveWebsite` | a `Project` row — field names change |
+| `SocialMediaLinks` | 3 inline `<a>` + `mailto:` | `links` (`showInSidebar`), `profile.publicEmail` |
+| `Contact` | 3 inline `<a>` + `mailto:` | `links` (`showInContact`), `profile`, `sectionCopy` |
+| `Footer` | inline credit + attribution | `profile` |
+| `SkillCard` | — | unchanged |
+
+Two clean-ups that belong here because the files are open anyway:
+
+- **Rubik is declared in three components** (`Footer`, `Contact`, `ProjectCard`),
+  each exporting its own `rubikFont`. One module, imported. `AdminLayout` already
+  does this for the dashboard.
+- **`<img>` → `next/image`** for the project covers, which is the one visual-layer
+  change this project's rules permit, because it fixes measurable layout shift.
+  It needs `images.remotePatterns` in `next.config.js` for the Blob host —
+  `*.public.blob.vercel-storage.com`. `Media.width` and `Media.height` are already
+  stored, so pass them and get no shift at all. This clears the three standing
+  lint warnings.
+
+`SocialLink.iconKey` maps to a component: keep a `const ICONS = { linkedin: LinkedInIcon, … }` lookup in the component. The enum in
+`lib/validation/socialLink.js` is the allowlist; a key with no entry renders the
+generic `link` icon rather than nothing.
+
+---
+
+### Step 6 — On-demand revalidation
+
+`lib/revalidate.js` and `pages/api/revalidate.js`, then wire the Settings
+screen's rebuild control — which currently says why it does not exist yet.
+
+- The endpoint calls `res.revalidate('/')`. Authorise it with `withAdmin` if it
+  is only ever called from the dashboard; if it is ever called from outside, a
+  shared secret in a header, compared with `crypto.timingSafeEqual`.
+- Call it from `lib/api/resource.js` after a successful mutation, or from the
+  dashboard after a save. Fire-and-forget with the failure logged: a
+  revalidation that fails must not turn a successful save into an error.
+- Remove the "not tracked yet" note on `/admin` and store a `lastRevalidatedAt`
+  somewhere it can be read back.
+
+---
+
+### Step 7 — Retire the static files
+
+One commit, once every section is verified:
+
+- Delete `data/skills.js`, `data/experience.js`, `data/projects.js`,
+  `data/contractualExperiences.js`.
+- Delete `public/images/projects/**` and `public/assets/Samiul_Kabir_Resume.pdf`.
+- Delete the fallbacks added in Step 4.
+- Update `docs/README.md` — its "Content Sources" and "Assets" sections describe
+  files that no longer exist.
+
+Git history keeps all of it recoverable. Doing this earlier removes the thing
+each section is being diffed against.
+
+---
+
+### Verification
+
+Per section, before moving to the next:
+
+- **Side-by-side diff against the current site**, desktop and mobile. `git
+  stash` the cutover, screenshot, unstash, screenshot, compare. Identical is the
+  bar — not "close enough".
+- **View source, not devtools.** The content must be in the HTML that arrives, or
+  the loading gate has effectively been reintroduced. `curl -s localhost:3000 |
+  grep 'Samiul Kabir'` is the whole test.
+- **Edit in the dashboard → reload → the change is live.** This is the sentence
+  the entire project exists for.
+
+Once, at the end:
+
+- `npm run db:seed` twice in a row leaves the same row counts.
+- Every timeline string renders exactly as it does today — this is where the
+  parser gets caught. `July 2025 – Present` must not come back as
+  `July 2025 - Present` with a different dash, or as `July 2025 – December 1969`.
+- The CV button downloads the right PDF through `/cv`.
+- Every project image loads from Blob and none 404s.
+- All three lint warnings are gone.
+- Lighthouse before and after: SEO and LCP should both improve, because the page
+  is now HTML rather than a spinner.
+
+### Known traps
+
+1. **Neon suspends when idle.** `getStaticProps` runs at build time, so a cold
+   build pays the wake-up. Give the build a generous timeout and do not read a
+   first-query delay as a failure.
+2. **`DATABASE_URL` must exist in the Vercel build environment**, not only at
+   runtime, or the build fails where the dev server worked. That belongs to
+   Phase 11, but it is discovered here.
+3. **`getStaticProps` cannot serialise `Date`, `undefined` or a Prisma `Decimal`.**
+   Convert in `lib/content.js`, once.
+4. **Two entries in `data/projects.js` share `id: 1`.** Any mapping keyed on the
+   source id silently loses one. Key on array position.
+5. **The `–` in the timeline strings is U+2013**, not a hyphen. It will not match
+   `split('-')`, and the failure is a wrong date rather than an error.
+6. **`status: 'PUBLISHED'` is easy to omit** on the ninth query. One module, and
+   grep it before shipping.
+7. **The three commented-out NDA projects are a decision, not a detail.** Ask
+   before importing them as drafts.
 
 ---
 
