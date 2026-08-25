@@ -34,7 +34,19 @@ imports them.
 - Project images: public/images/projects/**
 
 ## External Calls
-- Client-side fetch to LeetCode stats API: https://leetcode-stats-api.herokuapp.com/greeed
+- **LeetCode solved count** — `/api/leetcode` queries LeetCode's own GraphQL
+  endpoint server-side and caches the answer at the edge for an hour.
+
+  It used to be a client-side fetch to `leetcode-stats-api.herokuapp.com`, which
+  no longer exists: Heroku retired its free dynos in November 2022. A dead host's
+  error page carries no `Access-Control-Allow-Origin`, so the browser reported it
+  as a CORS failure — the symptom, not the cause. There was nothing behind the URL
+  to allow access to.
+
+  Going through this site's own server removes the CORS question entirely (it
+  applies to browsers, not to server-to-server requests) and removes the mirror
+  that could go offline. The username lives in `lib/leetcode.js` until Phase 7
+  reads it from `Profile.leetcodeUsername`.
 
 ## The dashboard
 

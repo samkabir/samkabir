@@ -5,19 +5,46 @@ import SkillCard from '../SkillCard/SkillCard';
 import Popover from '@mui/material/Popover';
 import AOS from 'aos';
 import 'aos/dist/aos.css';
+import { leetcodeProfileUrl } from '../../lib/leetcode';
 
 
 const AboutMe = () => {
     const [data, setData] = useState();
+    const [statsFailed, setStatsFailed] = useState(false);
     const [anchorEl, setAnchorEl] = useState(null);
+
+    /**
+     * The solved count, from this site's own endpoint.
+     *
+     * It used to call leetcode-stats-api.herokuapp.com directly. That service is
+     * gone — Heroku retired its free dynos — and a dead host's error page carries
+     * no CORS headers, so the browser reported a CORS failure rather than a 503.
+     * `/api/leetcode` asks LeetCode itself, server-side, where CORS does not
+     * apply.
+     *
+     * Three things the previous version did not do:
+     *
+     *   * **Catch.** A rejected fetch with no handler is an unhandled rejection
+     *     in the console and nothing on screen — which is how the number could
+     *     stop rendering without anyone noticing why.
+     *   * **Abort on unmount.** Strict Mode runs this twice in development, so
+     *     the first request is cancelled rather than left to set state on a
+     *     component that has gone.
+     *   * **Have a failed state.** `data && data.totalSolved` renders an empty
+     *     circle when the request fails, which looks like a styling bug.
+     */
     useEffect(() => {
-        fetch('https://leetcode-stats-api.herokuapp.com/greeed', {
-            method: 'GET'
-        })
-            .then(response => response.json())
-            .then(data => {
-                setData(data);
+        const controller = new AbortController();
+
+        fetch('/api/leetcode', { signal: controller.signal })
+            .then(response => (response.ok ? response.json() : Promise.reject(response)))
+            .then(stats => setData(stats))
+            .catch(error => {
+                if (error?.name === 'AbortError') return;
+                setStatsFailed(true);
             });
+
+        return () => controller.abort();
     }, [])
     useEffect(() => {
         AOS.init();
@@ -113,9 +140,12 @@ const AboutMe = () => {
                         <Typography sx={{ p: 1 }}>It ain&apos;t much, but it&apos;s honest work. Click on the number and View my LeetCode Profile.</Typography>
                     </Popover>
                 </Box>
-                <a href="https://leetcode.com/Greeed/" target="_blank" rel="noreferrer">
+                <a href={leetcodeProfileUrl()} target="_blank" rel="noreferrer">
                     <Box className='border-4 border-[#fff] rounded-full w-min py-2 px-3 text-[#7a61ff] font-semibold text-xl hover:border-[#7a61ff] hover:text-[#7a61ff] cursor-pointer transform transition duration-500'>
-                        {data && data.totalSolved}
+                        {/* A dash rather than a blank circle when the count is
+                            unavailable: the link still works, and an empty ring
+                            reads as a broken layout. */}
+                        {data ? data.totalSolved : statsFailed ? '—' : '…'}
                     </Box>
                 </a>
             </Box>
