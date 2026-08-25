@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import Link from 'next/link';
 import { Box, Typography } from '@mui/material';
 
 import AdminLayout, { adminScreen } from '@/components/admin/AdminLayout';
@@ -17,11 +18,11 @@ import { createTagSchema, updateTagSchema } from '@/lib/validation/tag';
 /**
  * Blog — posts and tags.
  *
- * The posts panel is deliberately read-and-manage rather than read-and-write.
- * Writing a post needs a Markdown editor with a preview, and that is Phase 8; a
- * `<textarea>` labelled "content" would be a worse version of something already
- * planned, and it would then have to be removed. What is here is what can be done
- * well now: finding a post, publishing or unpublishing it, and deleting one.
+ * The posts panel lists, filters, publishes and deletes; writing and editing a
+ * post happen on `/admin/blogs/new` and `/admin/blogs/[id]`, which host the
+ * Markdown editor with its live preview. This screen deliberately does not embed
+ * that editor: a full post is too much to edit inside a row, and the list is the
+ * right place to *find* a post, not to write one.
  *
  * Tags are managed here in full, because the editor needs them to exist. They are
  * created deliberately rather than typed into a post: a free-text tag field
@@ -82,6 +83,11 @@ function BlogsScreen({ adminUser }) {
         <PanelHeading
           title="Posts"
           hint="Ordered by publication date, newest first. Drafts sit at the top until they are published."
+          action={
+            <Link href="/admin/blogs/new" className={BUTTON_SM}>
+              Write a post
+            </Link>
+          }
         />
 
         <ListToolbar
@@ -106,9 +112,14 @@ function BlogsScreen({ adminUser }) {
               message={
                 filtered
                   ? 'Try a different search, or clear the status filter.'
-                  : 'The editor for writing one arrives in Phase 8. Until then this screen lists, publishes and deletes what the API creates.'
+                  : 'Write the first one — it saves as a draft, so nothing is public until you publish it.'
               }
               filtered={filtered}
+              action={
+                <Link href="/admin/blogs/new" className={BUTTON_SM}>
+                  Write a post
+                </Link>
+              }
             />
           }
           columns={[
@@ -117,9 +128,12 @@ function BlogsScreen({ adminUser }) {
               header: 'Title',
               render: (row) => (
                 <Box className="min-w-0">
-                  <Typography className="text-[#d2d2d2] text-sm font-semibold">
+                  <Link
+                    href={`/admin/blogs/${row.id}`}
+                    className="text-[#d2d2d2] text-sm font-semibold hover:text-[#7a61ff]"
+                  >
                     {row.title}
-                  </Typography>
+                  </Link>
                   <Typography className={`${HINT} font-mono`}>/{row.slug}</Typography>
                   {row.excerpt ? (
                     <Typography className={`${HINT} pt-1`}>{row.excerpt}</Typography>
@@ -162,6 +176,10 @@ function BlogsScreen({ adminUser }) {
           ]}
           actions={(row) => (
             <Box className="flex items-center justify-end gap-4">
+              <Link href={`/admin/blogs/${row.id}`} className={LINK_ACTION}>
+                edit
+              </Link>
+
               <button
                 type="button"
                 className={LINK_ACTION}
@@ -184,14 +202,6 @@ function BlogsScreen({ adminUser }) {
             </Box>
           )}
         />
-
-        <Box className="pt-4">
-          <Typography className={HINT}>
-            Writing and editing posts is Phase 8 — a Markdown editor with a live
-            preview, cover image and tag selection. This screen is the parts that
-            do not need one.
-          </Typography>
-        </Box>
       </Box>
 
       <Box className={`${PANEL} px-5 py-5`}>

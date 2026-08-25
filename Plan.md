@@ -4,7 +4,7 @@ Turning this static portfolio into a database-backed site with a private admin
 dashboard, so content is managed through a UI instead of by editing
 `data/*.js` and redeploying.
 
-**Status:** Phases 1–7 complete. Phase 8 next, nothing blocking.
+**Status:** Phases 1–8 complete. Phase 9 (security hardening) next, nothing blocking.
 
 The public site now renders from the database. The homepage went from 2,686
 bytes of spinner to 85,004 bytes of real HTML, `data/` and the local assets are
@@ -1092,7 +1092,7 @@ Once, at the end:
 
 ---
 
-## Phase 8 — Blog system
+## Phase 8 — Blog system ✅ COMPLETE
 
 **Objective.** A complete blog — public listing, post pages, and a dashboard
 editor with drafts — in the portfolio's existing visual language.
@@ -1119,6 +1119,49 @@ editor with drafts — in the portfolio's existing visual language.
   allowlist, and no `dangerouslySetInnerHTML` anywhere.
 - **Result:** `/blog` and `/blog/[slug]` live, "Blogs" in the nav, full
   draft-to-publish workflow.
+
+### What was built
+
+The public side shipped first (`78382a3`): `/blog` (a statically generated
+archive with client-side tag filtering off a query string, revalidated on
+publish), `/blog/[slug]` (`getStaticPaths` + `fallback: 'blocking'`, per-post
+SEO, OG/Twitter cards, JSON-LD `BlogPosting`, prev/next), the `components/Blog/`
+set, a database-driven sitemap and `robots.txt`, and the Markdown pipeline
+(`react-markdown` + `remark-gfm` + `rehype-sanitize` with an explicit allowlist;
+no `dangerouslySetInnerHTML` for post markup).
+
+The admin editor completes it. `components/admin/PostEditor.js` is one component
+for both create and edit, with `components/admin/MarkdownEditor.js` rendering its
+preview **through the same `BlogPostBody` and sanitiser the public page uses** —
+so what the author previews is what publishes, sanitisation included. It is
+mounted at `pages/admin/blogs/new.js` and `pages/admin/blogs/[id].js`, and the
+list at `pages/admin/blogs/index.js` links into both.
+
+### Four deviations from the plan above, each deliberate
+
+1. **No `header.js` edit.** The plan said to enable a commented-out Blog nav item
+   at line 66. Phase 7 had already replaced the hardcoded nav with one derived
+   from `SectionCopy` rows, and `navFromSections` adds "Blogs" **only when a post
+   is published** — a better rule than a permanently-present link to a possibly
+   empty archive. The commented-out item no longer exists to enable.
+2. **The editor is `.js`, not `.jsx`.** The plan named `MarkdownEditor.jsx`, but
+   every component in this project is JSX-in-`.js` (Next's convention here), and
+   the test suite's page-discovery reads `.js`. One file extension out of step
+   would have been the odd one out for no gain.
+3. **The list screen manages tags too, and hosts no inline editor.** Writing a
+   post happens on its own route rather than in a row; tags are created on the
+   list screen because the editor needs them to exist, and a free-text tag field
+   would breed near-duplicates. Reachability is by the row's "edit" link and the
+   title, so `new` and `[id]` need no nav item of their own —
+   `tests/adminPages.test.js` was taught this exemption.
+4. **`PostEditor` bugs from the WIP commits were fixed, not shipped.** The
+   editor committed under "WIP - Stage 8" called `formValues`/`toPayload` with
+   their arguments reversed, treated `validateWith`'s `{ ok, fields }` result as a
+   truthy error object (so every save aborted), and read cover/share images from a
+   key `formValues` never looks at. It also diffed a PATCH against a baseline that
+   never advanced past first load, which would re-send every saved field and leave
+   the form reading "unsaved" forever. All four are corrected against the real
+   `lib/adminForm` contract that `EntityForm` already uses.
 
 ---
 

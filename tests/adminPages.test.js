@@ -35,7 +35,35 @@ import { ADMIN_NAV } from '@/lib/adminNav';
  */
 const PAGES_DIR = path.join(import.meta.dirname, '..', 'pages', 'admin');
 
-const pageFiles = readdirSync(PAGES_DIR).filter((name) => name.endsWith('.js')).sort();
+/**
+ * Every page under `pages/admin`, discovered recursively.
+ *
+ * Recursive rather than a flat `readdirSync`, because a screen grows a
+ * subdirectory the moment it has more than one route — the blog editor is
+ * `blogs/index.js`, `blogs/new.js` and `blogs/[id].js`. A flat read would silently
+ * skip those, which is the very failure this file exists to prevent: a screen that
+ * renders for anyone who types its URL and that no test ever looked at.
+ *
+ * Paths are kept relative to `PAGES_DIR` with `/` separators, so `routeOf` can map
+ * a nested file to its URL and `sourceOf` can read it back.
+ */
+function collectPages(dir, prefix = '') {
+  const found = [];
+
+  for (const entry of readdirSync(dir, { withFileTypes: true })) {
+    const rel = prefix ? `${prefix}/${entry.name}` : entry.name;
+
+    if (entry.isDirectory()) {
+      found.push(...collectPages(path.join(dir, entry.name), rel));
+    } else if (entry.name.endsWith('.js')) {
+      found.push(rel);
+    }
+  }
+
+  return found;
+}
+
+const pageFiles = collectPages(PAGES_DIR).sort();
 
 /**
  * The login page is the deliberate exception.
@@ -52,9 +80,18 @@ const guardedPages = pageFiles.filter((name) => !UNGUARDED.includes(name));
 
 const sourceOf = (name) => readFileSync(path.join(PAGES_DIR, name), 'utf8');
 
-/** `index.js` → `/admin`, `skills.js` → `/admin/skills`. */
-const routeOf = (name) =>
-  name === 'index.js' ? '/admin' : `/admin/${name.replace(/\.js$/, '')}`;
+/**
+ * File path → route.
+ *
+ * `index.js` → `/admin`, `skills.js` → `/admin/skills`, `blogs/index.js` →
+ * `/admin/blogs`, `blogs/new.js` → `/admin/blogs/new`, `blogs/[id].js` →
+ * `/admin/blogs/[id]`. A directory's `index` is the directory's own route, not a
+ * child of it — the same rule Next uses.
+ */
+const routeOf = (relPath) => {
+  const withoutExt = relPath.replace(/\.js$/, '').replace(/\/index$/, '');
+  return withoutExt === 'index' ? '/admin' : `/admin/${withoutExt}`;
+};
 
 describe('dashboard page discovery', () => {
   it('finds the screens', () => {
@@ -141,8 +178,21 @@ describe('the navigation matches the screens that exist', () => {
     // The other direction: a screen with no way to reach it is a screen nobody
     // uses. `/admin/blogs` covers tags too, which is why the check is by page
     // rather than by feature.
+    //
+    // A sub-page is exempt when a nav screen sits above it: `/admin/blogs/new` and
+    // `/admin/blogs/[id]` are reached *from* `/admin/blogs`, not from the sidebar,
+    // so requiring them to appear in the nav themselves would be requiring a
+    // second, redundant link to the editor. The `/admin` root is excluded from
+    // being anyone's parent — it is a prefix of every route and would exempt the
+    // whole dashboard.
+    const reachableFromNav = (route) =>
+      hrefs.some((href) => href !== '/admin' && href !== route && route.startsWith(`${href}/`));
+
     for (const name of guardedPages) {
-      expect(hrefs, `${routeOf(name)} is not in ADMIN_NAV`).toContain(routeOf(name));
+      const route = routeOf(name);
+      if (reachableFromNav(route)) continue;
+
+      expect(hrefs, `${route} is not in ADMIN_NAV`).toContain(route);
     }
   });
 

@@ -1,7 +1,7 @@
 import { Box, Typography } from '@mui/material';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 
 import ConfirmDialog from './ConfirmDialog';
 import FormField from './FormField';
@@ -91,9 +91,13 @@ const ALL_FIELDS = [
   ...META_FIELDS,
   ...SEO_FIELDS,
   { name: 'contentMarkdown', label: 'Content', type: 'markdown' },
-  { name: 'coverMediaId', label: 'Cover image', type: 'image' },
+  // `mediaKey` names the relation the media row arrives under, so `formValues`
+  // can seed the preview from `post.coverMedia` while the value the form submits
+  // stays the id under `coverMediaId`. Without it the image branch has nothing to
+  // read and the editor opens on an empty picker for a post that has a cover.
+  { name: 'coverMediaId', label: 'Cover image', type: 'image', mediaKey: 'coverMedia' },
   { name: 'coverAlt', label: 'Cover alt text', type: 'text', max: 300 },
-  { name: 'ogMediaId', label: 'Share image', type: 'image' },
+  { name: 'ogMediaId', label: 'Share image', type: 'image', mediaKey: 'ogMedia' },
   { name: 'tagIds', label: 'Tags', type: 'list' },
 ];
 
@@ -112,16 +116,32 @@ export default function PostEditor({ post, tags, mode }) {
    */
   const initial = useMemo(
     () =>
-      formValues(ALL_FIELDS, {
-        ...(post ?? {}),
-        coverMediaId: post?.coverMedia ?? null,
-        ogMediaId: post?.ogMedia ?? null,
-        tagIds: post?.tags?.map((join) => join.tagId ?? join.tag?.id).filter(Boolean) ?? [],
-      }),
+      formValues(
+        {
+          ...(post ?? {}),
+          // The join rows carry the ids; `tagIds` is what the endpoint takes and
+          // what the chip list toggles against.
+          tagIds: post?.tags?.map((join) => join.tagId ?? join.tag?.id).filter(Boolean) ?? [],
+        },
+        ALL_FIELDS
+      ),
     [post]
   );
 
   const [values, setValues] = useState(initial);
+
+  /**
+   * The saved state to measure edits against — and to diff a PATCH from.
+   *
+   * Kept as its own state rather than reading `initial` directly, because this
+   * form stays open after a save. On an update it PATCHes and re-seeds itself from
+   * the server's row without the `post` prop changing (the parent screen loads the
+   * post once and does not refetch), so `initial` — memoised on `post` — would
+   * stay frozen on the values first loaded. Diffing against it would then re-send
+   * every already-saved field on the next save and leave the form reading "unsaved"
+   * forever. The baseline moves forward on every successful save instead.
+   */
+  const [baseline, setBaseline] = useState(initial);
   const [errors, setErrors] = useState({});
   const [banner, setBanner] = useState(null);
   const [saving, setSaving] = useState(false);
@@ -133,12 +153,20 @@ export default function PostEditor({ post, tags, mode }) {
   if ((post?.id ?? null) !== seededId) {
     setSeededId(post?.id ?? null);
     setValues(initial);
+    setBaseline(initial);
     setErrors({});
   }
 
+  // Compared as payloads, not as form state: `toPayload` reduces a media row to
+  // its id, so an unchanged cover is one id equal to another rather than two
+  // object references that happen to differ. This mirrors how `EntityForm`
+  // decides dirtiness, so the two forms agree on what "unsaved" means.
   const dirty = useMemo(
-    () => Object.keys(changedFields(initial, values)).length > 0,
-    [initial, values]
+    () =>
+      Object.keys(
+        changedFields(toPayload(baseline, ALL_FIELDS), toPayload(values, ALL_FIELDS))
+      ).length > 0,
+    [baseline, values]
   );
 
   useUnsavedChanges(dirty && !saving);
@@ -153,10 +181,10 @@ export default function PostEditor({ post, tags, mode }) {
   async function save(nextStatus) {
     setBanner(null);
 
-    const payload = toPayload(ALL_FIELDS, values);
+    const payload = toPayload(values, ALL_FIELDS);
     const body = isCreate
       ? { ...payload, status: nextStatus ?? 'DRAFT' }
-      : { ...changedFields(toPayload(ALL_FIELDS, initial), payload), ...(nextStatus ? { status: nextStatus } : {}) };
+      : { ...changedFields(toPayload(baseline, ALL_FIELDS), payload), ...(nextStatus ? { status: nextStatus } : {}) };
 
     if (!isCreate && Object.keys(body).length === 0) {
       setBanner('Nothing has changed.');
@@ -164,11 +192,13 @@ export default function PostEditor({ post, tags, mode }) {
     }
 
     const schema = isCreate ? createBlogPostSchema : updateBlogPostSchema;
-    const local = validateWith(schema, body);
+    const validated = validateWith(schema, body);
 
-    if (local) {
-      setErrors(local);
-      setBanner('Some fields need attention.');
+    if (!validated.ok) {
+      setErrors(validated.fields);
+      // `_` is where a whole-object rule lands — a cross-field check, like the
+      // cover-needs-alt-text rule, with no single input to blame.
+      setBanner(validated.fields._ ?? 'Some fields need attention.');
       return;
     }
 
@@ -186,12 +216,20 @@ export default function PostEditor({ post, tags, mode }) {
         // already been submitted invites a duplicate.
         await router.replace(`/admin/blogs/${result.item.id}`);
       } else {
-        setValues(formValues(ALL_FIELDS, {
-          ...result.item,
-          coverMediaId: result.item.coverMedia ?? null,
-          ogMediaId: result.item.ogMedia ?? null,
-          tagIds: result.item.tags?.map((join) => join.tagId ?? join.tag?.id).filter(Boolean) ?? [],
-        }));
+        // Re-seed from the server's row so derived fields — a resolved slug, a
+        // recomputed reading time — replace what was typed, and move the baseline
+        // with it so the form reads clean again.
+        const seeded = formValues(
+          {
+            ...result.item,
+            tagIds:
+              result.item.tags?.map((join) => join.tagId ?? join.tag?.id).filter(Boolean) ?? [],
+          },
+          ALL_FIELDS
+        );
+
+        setValues(seeded);
+        setBaseline(seeded);
         setSeededId(result.item.id);
       }
     } catch (problem) {
