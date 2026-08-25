@@ -7,6 +7,7 @@ import { Rubik } from 'next/font/google';
 
 import { getSessionUser } from '@/lib/auth';
 import { safeReturnPath } from '@/lib/returnPath';
+import { BUTTON, INPUT } from '@/lib/adminTheme';
 
 const rubikFont = Rubik({ subsets: ['latin'], weight: ['400', '500', '600', '700'] });
 
@@ -68,15 +69,11 @@ export default function AdminLogin() {
     setBusy(null);
   }
 
-  const inputClass =
-    'w-full bg-transparent border-2 border-[#d2d2d2]/30 focus:border-[#7a61ff] outline-none ' +
-    'text-[#d2d2d2] px-4 py-3 transition duration-300';
-
-  const buttonClass =
-    'w-full transform transition duration-500 border-2 border-[#7a61ff] py-3 px-6 ' +
-    'font-semibold text-[#7a61ff] hover:text-[#000] hover:bg-[#7a61ff] normal-case ' +
-    'disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:bg-transparent ' +
-    'disabled:hover:text-[#7a61ff]';
+  // The same strings the dashboard uses, from `lib/adminTheme.js`. They were
+  // written here first, in Phase 4, and copied into the field components in Phase
+  // 5 — which is how two of the three ended up with a different focus style.
+  const inputClass = INPUT;
+  const buttonClass = `${BUTTON} w-full`;
 
   return (
     <>

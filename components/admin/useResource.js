@@ -23,16 +23,16 @@ import { useToast } from './Toast';
  *     slug input, not in a toast at the bottom of the screen. The form catches
  *     and renders it.
  *
- *   * **`remove`, `publish`, `reorder` and `run` return a boolean and toast.**
- *     They come from a row, and there is no form to render into. They also roll
- *     the list back first, so the screen matches the database again before the
- *     message appears.
+ *   * **`patchRow`, `remove`, `publish`, `reorder` and `run` return a boolean and
+ *     toast.** They come from a row, and there is no form to render into. They
+ *     also roll the list back first, so the screen matches the database again
+ *     before the message appears.
  *
  * ## What is optimistic and what is not
  *
- * Deleting, publishing and reordering are applied locally first: they are single
- * predictable changes, the round trip is visible on a slow connection, and
- * dragging a row that springs back after 200 ms feels broken.
+ * Deleting, publishing, toggling and reordering are applied locally first: they
+ * are single predictable changes, the round trip is visible on a slow connection,
+ * and dragging a row that springs back after 200 ms feels broken.
  *
  * Creating is **not**. The server derives fields the client cannot guess — a
  * slug, a résumé version, a reading time — so an optimistic row would appear with
@@ -43,68 +43,83 @@ import { useToast } from './Toast';
 export function useResource(basePath, { query = {}, position = 'end' } = {}) {
   const { notifyError } = useToast();
 
-  const [items, setItems] = useState([]);
-  const [total, setTotal] = useState(0);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [busyIds, setBusyIds] = useState(() => new Set());
   const [reloadToken, setReloadToken] = useState(0);
-
-  /**
-   * The list, kept in a ref as well as in state.
-   *
-   * Not a duplicate for convenience — it is what makes rollback correct. React
-   * batches state updates, so inside an async mutation `items` is whatever it was
-   * when the callback was created, and a functional `setItems` updater does not
-   * run until render. The ref is written synchronously, so the snapshot taken
-   * just before an optimistic change is the real previous list even when two
-   * mutations overlap.
-   */
-  const itemsRef = useRef(items);
-
-  const commit = useCallback((next) => {
-    itemsRef.current = typeof next === 'function' ? next(itemsRef.current) : next;
-    setItems(itemsRef.current);
-  }, []);
+  const [busyIds, setBusyIds] = useState(() => new Set());
 
   // Serialised, so an inline object literal in the caller does not retrigger the
-  // effect on every render.
+  // effect on every render. The reload counter is part of the key so that asking
+  // for the same query again is a different request.
   const queryKey = queryString(query);
+  const dataKey = `${basePath}${queryKey}#${reloadToken}`;
 
   // Read out separately because `publish` has to know whether the row it just
   // changed still matches the list it is in.
   const statusFilter = query.status ?? null;
 
+  /**
+   * Everything the fetch owns, in one piece of state, stamped with the request it
+   * came from.
+   *
+   * **`loading` is derived from that stamp rather than stored.** The obvious
+   * version — `setLoading(true)` at the top of the effect — has a window one
+   * render wide where the query has changed and the screen still says it is
+   * showing current data, and it makes the effect cascade a render before it does
+   * any work. Comparing the stamp to the current key means "is this list for the
+   * question being asked" is answered by construction, and the only writes happen
+   * when a response arrives.
+   */
+  const [loaded, setLoaded] = useState({ key: null, items: [], total: 0, error: null });
+
+  const loading = loaded.key !== dataKey;
+
+  /**
+   * The list, kept in a ref as well as in state.
+   *
+   * Not a duplicate for convenience — it is what makes rollback correct. React
+   * batches state updates, so inside an async mutation the captured `items` is
+   * whatever it was when the callback was created, and a functional updater does
+   * not run until render. The ref is written synchronously, so the snapshot taken
+   * just before an optimistic change is the real previous list even when two
+   * mutations overlap.
+   */
+  const itemsRef = useRef(loaded.items);
+
+  const commit = useCallback((next) => {
+    itemsRef.current = typeof next === 'function' ? next(itemsRef.current) : next;
+    const items = itemsRef.current;
+    setLoaded((current) => ({ ...current, items }));
+  }, []);
+
   useEffect(() => {
     const controller = new AbortController();
     let cancelled = false;
-
-    setLoading(true);
-    setError(null);
 
     api
       .get(`${basePath}${queryKey}`, { signal: controller.signal })
       .then((body) => {
         if (cancelled) return;
-        commit(body?.items ?? []);
-        setTotal(body?.total ?? 0);
+        itemsRef.current = body?.items ?? [];
+        setLoaded({ key: dataKey, items: itemsRef.current, total: body?.total ?? 0, error: null });
       })
       .catch((problem) => {
         // An abort is this effect being replaced by a newer one — a keystroke in
         // the search box. Reporting it would flash an error for a request nobody
         // is waiting for any more.
         if (cancelled || problem?.name === 'AbortError') return;
-        setError(problem.message ?? 'Could not load this list.');
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
+        itemsRef.current = [];
+        setLoaded({
+          key: dataKey,
+          items: [],
+          total: 0,
+          error: problem.message ?? 'Could not load this list.',
+        });
       });
 
     return () => {
       cancelled = true;
       controller.abort();
     };
-  }, [basePath, queryKey, reloadToken, commit]);
+  }, [basePath, queryKey, dataKey]);
 
   const reload = useCallback(() => setReloadToken((token) => token + 1), []);
 
@@ -151,11 +166,12 @@ export function useResource(basePath, { query = {}, position = 'end' } = {}) {
   const create = useCallback(
     async (body) => {
       const result = await api.post(basePath, body);
-      commit((current) => addItem(current, result.item, { position }));
-      setTotal((current) => current + 1);
+      itemsRef.current = addItem(itemsRef.current, result.item, { position });
+      const items = itemsRef.current;
+      setLoaded((current) => ({ ...current, items, total: current.total + 1 }));
       return result.item;
     },
-    [basePath, commit, position]
+    [basePath, position]
   );
 
   const update = useCallback(
@@ -167,13 +183,32 @@ export function useResource(basePath, { query = {}, position = 'end' } = {}) {
     [basePath, commit]
   );
 
+  /**
+   * An optimistic PATCH of a few fields, for a toggle on a row.
+   *
+   * Distinct from `update`, which is the form's path and throws so field errors
+   * can be rendered beside their inputs. A row toggle has no form to render into:
+   * it applies immediately, rolls back on failure, and reports through the toast.
+   * The local merge is `{ ...item, ...body }` rather than a replacement, because
+   * the row on screen carries relations the PATCH body does not mention.
+   */
+  const patchRow = useCallback(
+    (id, body) =>
+      optimistic(
+        (current) => current.map((item) => (item.id === id ? { ...item, ...body } : item)),
+        () => api.patch(`${basePath}/${id}`, body),
+        { id }
+      ),
+    [basePath, optimistic]
+  );
+
   const remove = useCallback(
     (id) =>
       optimistic(
         (current) => removeItem(current, id),
         async () => {
           await api.del(`${basePath}/${id}`);
-          setTotal((current) => Math.max(0, current - 1));
+          setLoaded((current) => ({ ...current, total: Math.max(0, current.total - 1) }));
           // Nothing to merge back: a 204 has no body, and the row is gone.
           return null;
         },
@@ -226,13 +261,14 @@ export function useResource(basePath, { query = {}, position = 'end' } = {}) {
 
   return useMemo(
     () => ({
-      items,
-      total,
+      items: loaded.items,
+      total: loaded.total,
       loading,
-      error,
+      error: loaded.error,
       reload,
       create,
       update,
+      patchRow,
       remove,
       publish,
       reorder,
@@ -243,8 +279,66 @@ export function useResource(basePath, { query = {}, position = 'end' } = {}) {
       isBusy,
       busy: busyIds.size > 0,
     }),
-    [items, total, loading, error, reload, create, update, remove, publish, reorder, optimistic, commit, isBusy, busyIds]
+    [loaded, loading, reload, create, update, patchRow, remove, publish, reorder, optimistic, commit, isBusy, busyIds]
   );
+}
+
+/**
+ * A single-row table — `/profile` and `/seo`.
+ *
+ * Deliberately not `useResource` with a list of one. The endpoints are a
+ * different shape (`GET` and `PUT`, no collection, no create), the response is
+ * `{ item }` rather than `{ items, total }`, and `item: null` is a *normal* state
+ * rather than an error: a fresh install has no profile row until the form is
+ * saved for the first time. Modelling that as an empty list would make the screen
+ * render "nothing here yet" where it should render an empty form.
+ *
+ * `save` throws rather than toasting, for the same reason `create` does — the
+ * caller is a form, and the useful part of a failure is the `fields` map.
+ */
+export function useSingleton(path) {
+  const [reloadToken, setReloadToken] = useState(0);
+  const dataKey = `${path}#${reloadToken}`;
+
+  // Same derived-loading arrangement as above, for the same reason.
+  const [loaded, setLoaded] = useState({ key: null, item: null, error: null });
+
+  useEffect(() => {
+    const controller = new AbortController();
+    let cancelled = false;
+
+    api
+      .get(path, { signal: controller.signal })
+      .then((body) => {
+        if (!cancelled) setLoaded({ key: dataKey, item: body?.item ?? null, error: null });
+      })
+      .catch((problem) => {
+        if (cancelled || problem?.name === 'AbortError') return;
+        setLoaded({ key: dataKey, item: null, error: problem.message ?? 'Could not load this.' });
+      });
+
+    return () => {
+      cancelled = true;
+      controller.abort();
+    };
+  }, [path, dataKey]);
+
+  const save = useCallback(
+    async (body) => {
+      const result = await api.put(path, body);
+      setLoaded((current) => ({ ...current, item: result.item, error: null }));
+      return result.item;
+    },
+    [path]
+  );
+
+  return {
+    item: loaded.item,
+    loading: loaded.key !== dataKey,
+    error: loaded.error,
+    save,
+    reload: () => setReloadToken((token) => token + 1),
+  };
 }
 
 /**

@@ -36,7 +36,6 @@ export function useUnsavedChanges(dirty, message = 'You have unsaved changes. Le
     };
 
     const onRouteChange = () => {
-      // eslint-disable-next-line no-alert
       if (window.confirm(message)) return;
 
       // Undo the URL change the router has already made optimistically, so the

@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Box, Typography } from '@mui/material';
 
-import AdminLayout from '@/components/admin/AdminLayout';
+import AdminLayout, { adminScreen } from '@/components/admin/AdminLayout';
 import ConfirmDialog from '@/components/admin/ConfirmDialog';
 import SortableList from '@/components/admin/SortableList';
 import StatusChip, { Flag } from '@/components/admin/StatusChip';
@@ -91,7 +91,7 @@ function fieldsFor(kind) {
   ];
 }
 
-export default function ExperiencesScreen({ adminUser }) {
+function ExperiencesScreen({ adminUser }) {
   const [kind, setKind] = useState('FULL_TIME');
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState('');
@@ -327,5 +327,12 @@ export default function ExperiencesScreen({ adminUser }) {
     </AdminLayout>
   );
 }
+
+/**
+ * Wrapped so the theme and the toast provider sit *above* this component.
+ * Rendering them from inside it would put them below every hook it calls —
+ * see the note on `adminScreen`.
+ */
+export default adminScreen(ExperiencesScreen);
 
 export const getServerSideProps = withAdminPage();

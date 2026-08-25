@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Box, Typography } from '@mui/material';
 
-import AdminLayout from '@/components/admin/AdminLayout';
+import AdminLayout, { adminScreen } from '@/components/admin/AdminLayout';
 import ConfirmDialog from '@/components/admin/ConfirmDialog';
 import SortableList from '@/components/admin/SortableList';
 import StatusChip from '@/components/admin/StatusChip';
@@ -34,7 +34,7 @@ const FIELDS = [
   },
 ];
 
-export default function SkillsScreen({ adminUser }) {
+function SkillsScreen({ adminUser }) {
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState('');
   const debouncedSearch = useDebouncedValue(search);
@@ -209,5 +209,12 @@ export default function SkillsScreen({ adminUser }) {
     </AdminLayout>
   );
 }
+
+/**
+ * Wrapped so the theme and the toast provider sit *above* this component.
+ * Rendering them from inside it would put them below every hook it calls —
+ * see the note on `adminScreen`.
+ */
+export default adminScreen(SkillsScreen);
 
 export const getServerSideProps = withAdminPage();
