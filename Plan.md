@@ -4,14 +4,11 @@ Turning this static portfolio into a database-backed site with a private admin
 dashboard, so content is managed through a UI instead of by editing
 `data/*.js` and redeploying.
 
-**Status:** Phases 1–6 complete. Phase 7 next, nothing blocking.
+**Status:** Phases 1–7 complete. Phase 8 next, nothing blocking.
 
-One Phase 7 item was pulled forward because it was failing in the browser: the
-LeetCode call is now a cached server-side proxy at `/api/leetcode`
-(`lib/leetcode.js`). The old third-party service had been retired, and a dead
-host's error page carries no CORS headers — which is why it surfaced as a CORS
-error rather than a 503. Phase 7 still has to read the username from
-`Profile.leetcodeUsername` and honour `Profile.showLeetcode`.
+The public site now renders from the database. The homepage went from 2,686
+bytes of spinner to 85,004 bytes of real HTML, `data/` and the local assets are
+gone, and a dashboard save is live on the next reload.
 
 ---
 
@@ -703,7 +700,7 @@ through the ten screens or a new dev dependency. See
 
 ---
 
-## Phase 7 — Seed the database and cut the public site over
+## Phase 7 — Seed the database and cut the public site over ✅ COMPLETE
 
 **Objective.** Move the public site from static imports to database-driven
 props, section by section, with no visible change to a visitor.
@@ -820,7 +817,64 @@ values that reproduce it.
 
 ---
 
-### Step 1 Status: ✅ COMPLETE
+### All seven steps are done. What actually happened
+
+| Step | Commit | Outcome |
+|---|---|---|
+| 1 — Seed script | `182436b` | `prisma/seed.js`, idempotent, timeline parser handles both dashes |
+| 2 — Assets into Blob | `0a2a947` | `scripts/import-assets.mjs`; 17 files stored, alt text written per image |
+| 3 — Read layer | `93fae1d` | `lib/content.js`; one `PUBLISHED` filter, no `Date` crosses the boundary |
+| 4 — `getStaticProps` | `bf4e27a` | Loading gate deleted; 2,686 → 75,811 bytes of server HTML |
+| 5 — Components take props | `f24671b` | Visible text identical bar one disclosed character; lint clean |
+| 6 — On-demand revalidation | `639815e` | Every save rebuilds `/`; verified edit → reload → live |
+| 7 — Retire the static files | `7885ced` | 24 files / 7.3 MB deleted; upload fixtures replaced |
+
+**Verified at the end of the phase:** `npm run db:seed` twice leaves identical
+row counts; all seven timeline strings reproduce exactly and none collapses to
+1969/1970; all 16 covers return 200 from Blob; `/cv` serves the right PDF
+byte-for-byte; the deleted paths 404 while the site is unaffected; all ten
+dashboard screens still redirect signed out and render signed in; `/admin`
+reports "Live". 454 tests in 19 files, 0 lint errors, 0 warnings.
+
+#### Eight deviations from the plan above, each deliberate
+
+1. **The seed transcribes rather than imports.** Step 1 said "import, do not
+   transcribe" — but Step 7 deletes the files it would import from, which would
+   leave the seed permanently broken. Its own copy is what makes it re-runnable.
+2. **Education and Experience are skipped, not reset, by default.** Neither has
+   a natural unique key. Plain runs leave them alone; `--reset` replaces them.
+3. **The three NDA projects are behind `--include-nda`** rather than decided.
+   They import as DRAFT, so nothing becomes visible either way. Default is out,
+   which preserves current behaviour exactly. **Still open for Samiul.**
+4. **`attributionLabel` holds the link text**, not the prefix. The footer's
+   second line needs three things and `Profile` supplies two; "Web Design Idea"
+   is static prose in `Footer.js`. The reasoning is in that file.
+5. **`Education.note` carries the pre-degree qualifier** ("UnderGraduation"),
+   which is what lets the first education sentence be reproduced word for word.
+6. **The revalidate endpoint lives under `pages/api/admin/`**, not at
+   `pages/api/revalidate.js`. That puts it behind `createHandler`'s
+   inescapable `withAdmin` and inside the route-globbing test — the suite gained
+   its 401 assertion by itself.
+7. **`revalidate` stays at 60, not 3600.** On-demand busting is the primary
+   mechanism and the timer is only the backstop for one that fails; an hour is a
+   long time to serve a page the owner just corrected, and ISR only regenerates
+   on request, so the cost of 60 is negligible.
+8. **`tests/fixtures/` replaced the real-asset fixtures.** Deleting the
+   screenshots broke nine byte-detection tests, including the security-relevant
+   "PDF renamed as PNG". The fixtures are real encoder output at 5 KB, and cover
+   both WebP sub-formats where the originals covered only lossy.
+
+#### One disclosed visual change, and it is one character
+
+`data/experience.js` wrote six of its seven date ranges with an en dash (U+2013)
+and one — `July 2025 - Present` — with an ASCII hyphen. The shared
+`formatTimeline` emits an en dash for all seven, so that row's separator
+changed. The alternative was setting `timelineOverride` on it purely to preserve
+a typo, which would have made the override column meaningless. The dashboard
+already rendered it with an en dash, so this also removes a disagreement between
+the two.
+
+#### Step 1 detail
 
 Seed script created: `prisma/seed.js`. Run `npm run db:seed` to populate database with:
 - 1 Profile (singleton with greeting, fullName, headline, bio, emails, leetcodeUsername, footer credit, attribution)
