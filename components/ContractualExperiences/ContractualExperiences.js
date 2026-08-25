@@ -3,7 +3,6 @@ import { useEffect, useState } from "react";
 import PropTypes from "prop-types";
 import Tabs from "@mui/material/Tabs";
 import Tab from "@mui/material/Tab";
-import { ContractualExperiencesData } from "../../data/contractualExperiences";
 import ArrowRightIcon from "@mui/icons-material/ArrowRight";
 import AOS from "aos";
 import "aos/dist/aos.css";
@@ -41,7 +40,17 @@ function a11yProps(index) {
   };
 }
 
-const ContractualExperiences = () => {
+/**
+ * Consulting engagements — the same table as `Experience`, filtered to
+ * `kind: CONTRACT`.
+ *
+ * The two components were near-duplicates over two structurally identical data
+ * files, which is why the schema merged them into one model with a discriminator.
+ * They stay separate components because the site renders them as two sections
+ * with different headings, but they now read from one table, one endpoint and one
+ * validation schema.
+ */
+const ContractualExperiences = ({ experiences = [], section }) => {
   const [value, setValue] = useState(0);
 
   useEffect(() => {
@@ -54,7 +63,7 @@ const ContractualExperiences = () => {
   return (
     <Box
       className="py-10 md:h-[500px]"
-      id="contract-exp"
+      id={section?.anchor || "contract-exp"}
       data-aos="fade-down"
       data-aos-easing="ease-in-out"
       data-aos-duration="1000"
@@ -63,7 +72,8 @@ const ContractualExperiences = () => {
     >
       <Box>
         <Typography variant="h5" className="font-semibold text-[#d2d2d2]">
-          <span className="text-[#7a61ff]">01.0 </span> Contractual Experiences
+          <span className="text-[#7a61ff]">{section?.numberLabel || "01.0"} </span>{" "}
+          {section?.heading || "Contractual Experiences"}
         </Typography>
       </Box>
       <Box className="mt-4">
@@ -81,11 +91,10 @@ const ContractualExperiences = () => {
               sx={{ borderRight: 2, borderColor: "divider" }}
               className="hidden md:block"
             >
-              {ContractualExperiencesData &&
-                ContractualExperiencesData.map((e, i) => (
+              {experiences.map((e, i) => (
                   <Tab
-                    label={e.job_position}
-                    key={i}
+                    label={e.jobPosition}
+                    key={e.id}
                     className="text-white w-[180px] normal-case font-[600]"
                     {...a11yProps(i)}
                   />
@@ -105,23 +114,21 @@ const ContractualExperiences = () => {
               allowScrollButtonsMobile
               aria-label="scrollable force tabs example"
             >
-              {ContractualExperiencesData &&
-                ContractualExperiencesData.map((e, i) => (
+              {experiences.map((e, i) => (
                   <Tab
-                    label={e.job_position}
-                    key={i}
+                    label={e.jobPosition}
+                    key={e.id}
                     className="text-white w-[180px] normal-case font-[600]"
                   />
                 ))}
             </Tabs>
           </Box>
 
-          {ContractualExperiencesData &&
-            ContractualExperiencesData.map((e, i) => (
+          {experiences.map((e, i) => (
               <TabPanel
                 value={value}
                 index={i}
-                key={i}
+                key={e.id}
                 className="md:w-[800px]"
               >
                 <Box>
@@ -130,7 +137,7 @@ const ContractualExperiences = () => {
                       variant="subtitle1"
                       className="text-white font-[600]"
                     >
-                      {e.company_name}
+                      {e.companyName}
                     </Typography>
                   </Box>
                   <Box className="pb-2">

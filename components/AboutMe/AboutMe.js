@@ -1,17 +1,67 @@
 import { Box, Typography } from '@mui/material';
 import { useEffect, useState } from 'react';
-import { skills } from '../../data/skills';
 import SkillCard from '../SkillCard/SkillCard';
 import Popover from '@mui/material/Popover';
 import AOS from 'aos';
 import 'aos/dist/aos.css';
 import { leetcodeProfileUrl } from '../../lib/leetcode';
 
+const ACCENT = 'text-[#7a61ff] font-semibold';
 
-const AboutMe = () => {
+/**
+ * One education row, in the prose the site already used.
+ *
+ * The two rows on the site read differently — "Completed UnderGraduation,
+ * Bachelor's in **Computer Science and Engineering** from **BRAC University**."
+ * and "Completed **O and A Levels** under Pearson Edexcel Education." — and they
+ * accent different words. That is not a template with one shape; it is two.
+ *
+ * So the branch is on `field`, which is the actual difference between a degree
+ * that has a subject and a qualification that does not:
+ *
+ *   * with a field → "in {field} from {institution}", accenting both
+ *   * without one  → "under {institution}", accenting the qualification instead
+ *
+ * `note` carries any qualifier that belongs before the degree ("UnderGraduation"),
+ * which is the only way to keep the first sentence word-for-word without hardcoding
+ * it. Reproducing both exactly was the bar — this phase is not allowed to reword
+ * the page while moving where the words come from.
+ */
+function EducationLine({ row }) {
+    if (row.field) {
+        return (
+            <>
+                Completed {row.note ? `${row.note}, ` : ''}{row.degree ? `${row.degree} ` : ''}in{' '}
+                <span className={ACCENT}>{row.field}</span> from{' '}
+                <span className={ACCENT}>{row.institution}</span>.
+            </>
+        );
+    }
+
+    return (
+        <>
+            Completed <span className={ACCENT}>{row.degree}</span> under {row.institution}
+            {row.note ? ` ${row.note}` : ''}.
+        </>
+    );
+}
+
+const AboutMe = ({
+    profile,
+    skills = [],
+    education = [],
+    sections = {},
+}) => {
     const [data, setData] = useState();
     const [statsFailed, setStatsFailed] = useState(false);
     const [anchorEl, setAnchorEl] = useState(null);
+
+    const about = sections.about;
+    const skillsSection = sections.skills;
+    const showLeetcode = profile?.showLeetcode !== false;
+    // `|| undefined` rather than the raw value: a default parameter only fires for
+    // `undefined`, so a null column would otherwise build `leetcode.com/null/`.
+    const leetcodeUsername = profile?.leetcodeUsername || undefined;
 
     /**
      * The solved count, from this site's own endpoint.
@@ -20,7 +70,7 @@ const AboutMe = () => {
      * gone — Heroku retired its free dynos — and a dead host's error page carries
      * no CORS headers, so the browser reported a CORS failure rather than a 503.
      * `/api/leetcode` asks LeetCode itself, server-side, where CORS does not
-     * apply.
+     * apply, and reads the username from `Profile` rather than a constant.
      *
      * Three things the previous version did not do:
      *
@@ -32,8 +82,13 @@ const AboutMe = () => {
      *     component that has gone.
      *   * **Have a failed state.** `data && data.totalSolved` renders an empty
      *     circle when the request fails, which looks like a styling bug.
+     *
+     * Skipped entirely when the block is hidden, so a switch in the dashboard
+     * also stops the request rather than only hiding its result.
      */
     useEffect(() => {
+        if (!showLeetcode) return undefined;
+
         const controller = new AbortController();
 
         fetch('/api/leetcode', { signal: controller.signal })
@@ -45,7 +100,7 @@ const AboutMe = () => {
             });
 
         return () => controller.abort();
-    }, [])
+    }, [showLeetcode])
     useEffect(() => {
         AOS.init();
       }, [])
@@ -62,31 +117,28 @@ const AboutMe = () => {
 
     const open = Boolean(anchorEl);
     return (
-        <Box className='py-10' id="about" data-aos="fade-down" data-aos-easing="ease-in-out" data-aos-duration="1000" data-aos-delay="50" data-aos-once="true">
+        <Box className='py-10' id={about?.anchor || 'about'} data-aos="fade-down" data-aos-easing="ease-in-out" data-aos-duration="1000" data-aos-delay="50" data-aos-once="true">
             <Box>
                 <Typography variant='h4' className='font-semibold text-[#d2d2d2]'>
-                    <span className='text-[#7a61ff]'>00. </span> About Me
+                    <span className='text-[#7a61ff]'>{about?.numberLabel || '00.'} </span> {about?.heading || 'About Me'}
                 </Typography>
             </Box>
             <Box className='md:grid md:grid-cols-2 gap-4 text-[#d2d2d2]'>
                 <Box>
                     <Typography variant='subtitle1' className='pt-6'>
-                    To secure a challenging position as a Frontend Engineer where I can utilize my expertise in building
-                    scalable, high-quality web applications, while leveraging my proficiency in React, Next.js, and software
-                    development to contribute to innovative and impactful solutions.
+                    {profile?.bio}
                     </Typography>
                     <Box className='md:pl-4'>
                         <ul className='list-disc'>
-                            <li>
-                                <Typography variant='subtitle2' className='pt-6'>
-                                    Completed UnderGraduation, Bachelor&apos;s in <span className='text-[#7a61ff] font-semibold'>Computer Science and Engineering</span> from <span className='text-[#7a61ff] font-semibold'>BRAC University</span>.
-                                </Typography>
-                            </li>
-                            <li>
-                                <Typography variant='subtitle2' className='pt-2'>
-                                    Completed <span className='text-[#7a61ff] font-semibold'>O and A Levels</span> under Pearson Edexcel Education.
-                                </Typography>
-                            </li>
+                            {education.map((row, i) => (
+                                <li key={row.id}>
+                                    {/* The first row sits closer to the paragraph above it than the
+                                        rest do to each other — pt-6 then pt-2, as before. */}
+                                    <Typography variant='subtitle2' className={i === 0 ? 'pt-6' : 'pt-2'}>
+                                        <EducationLine row={row} />
+                                    </Typography>
+                                </li>
+                            ))}
                         </ul>
                     </Box>
                 </Box>
@@ -98,7 +150,7 @@ const AboutMe = () => {
             </Box>
             <Box>
                 <Typography variant='h5' className='font-semibold text-[#d2d2d2] pt-10 pb-6'>
-                    <span className='text-[#7a61ff]'>00.0 </span>Skill Stack
+                    <span className='text-[#7a61ff]'>{skillsSection?.numberLabel || '00.0'} </span>{skillsSection?.heading || 'Skill Stack'}
                 </Typography>
             </Box>
 
@@ -109,6 +161,7 @@ const AboutMe = () => {
                     ))
                 }
             </Box>
+            {showLeetcode ? (
             <Box className='flex'>
                 <Box className='flex items-center pr-6'>
                     <Typography variant='h6' className='text-[#d2d2d2] font-semibold w-full'
@@ -140,7 +193,7 @@ const AboutMe = () => {
                         <Typography sx={{ p: 1 }}>It ain&apos;t much, but it&apos;s honest work. Click on the number and View my LeetCode Profile.</Typography>
                     </Popover>
                 </Box>
-                <a href={leetcodeProfileUrl()} target="_blank" rel="noreferrer">
+                <a href={leetcodeProfileUrl(leetcodeUsername)} target="_blank" rel="noreferrer">
                     <Box className='border-4 border-[#fff] rounded-full w-min py-2 px-3 text-[#7a61ff] font-semibold text-xl hover:border-[#7a61ff] hover:text-[#7a61ff] cursor-pointer transform transition duration-500'>
                         {/* A dash rather than a blank circle when the count is
                             unavailable: the link still works, and an empty ring
@@ -149,6 +202,7 @@ const AboutMe = () => {
                     </Box>
                 </a>
             </Box>
+            ) : null}
 
 
 

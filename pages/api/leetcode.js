@@ -1,3 +1,4 @@
+import { getProfile } from '@/lib/content';
 import {
   fetchLeetCodeStats,
   LeetCodeError,
@@ -19,12 +20,17 @@ import {
  * subject to the rule. The previous implementation avoided that by calling a
  * third-party mirror that added the header — and that mirror is now gone.
  *
- * The username is a constant for now. Phase 7 reads it from
- * `Profile.leetcodeUsername` and honours `Profile.showLeetcode`, which is what
- * makes it editable without a deploy. Deliberately **not** taken from the query
- * string: a `?username=` parameter turns this into an open proxy that anyone can
- * point at any profile, using this deployment's bandwidth and IP reputation, for
- * a value the site renders in exactly one place.
+ * The username comes from `Profile.leetcodeUsername`, so it is editable from the
+ * dashboard without a deploy, and the constant in `lib/leetcode.js` is only the
+ * fallback for a database with no profile row yet. Deliberately **not** taken
+ * from the query string: a `?username=` parameter turns this into an open proxy
+ * that anyone can point at any profile, using this deployment's bandwidth and IP
+ * reputation, for a value the site renders in exactly one place.
+ *
+ * `Profile.showLeetcode` is honoured here as well as in the component. Hiding the
+ * block client-side would leave this endpoint answering for a profile the owner
+ * has chosen to stop publishing — a smaller version of the same mistake as
+ * relying on a hidden route for authorisation.
  */
 export default async function leetcode(req, res) {
   if (req.method !== 'GET' && req.method !== 'HEAD') {
@@ -34,7 +40,15 @@ export default async function leetcode(req, res) {
   }
 
   try {
-    const stats = await fetchLeetCodeStats(LEETCODE_USERNAME);
+    const profile = await getProfile();
+
+    if (profile && profile.showLeetcode === false) {
+      res.setHeader('Cache-Control', 'no-store');
+      res.status(404).json({ error: { message: 'The LeetCode block is switched off.' } });
+      return;
+    }
+
+    const stats = await fetchLeetCodeStats(profile?.leetcodeUsername || LEETCODE_USERNAME);
 
     /**
      * Cached hard, and at the edge rather than in the visitor's browser.

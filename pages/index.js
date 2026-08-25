@@ -32,7 +32,19 @@ import { getPageContent } from '@/lib/content'
  * backstop for a revalidation call that never lands.
  */
 export default function Home({ content }) {
-  const seo = content?.seo;
+  const {
+    profile,
+    seo,
+    sections = {},
+    nav = [],
+    skills = [],
+    education = [],
+    experiences = [],
+    contractualExperiences = [],
+    projects = [],
+    socialLinks = { sidebar: [], contact: [] },
+    hasResume = false,
+  } = content ?? {};
 
   const title = seo?.siteTitle || 'Samiul Kabir';
   const description = seo?.defaultDescription || 'Portfolio Website of Samiul Kabir';
@@ -48,19 +60,31 @@ export default function Home({ content }) {
       </Head>
 
       <main>
-        <Header />
-        <SocialMediaLinks />
+        <Header sections={nav} />
+        <SocialMediaLinks links={socialLinks.sidebar} email={profile?.publicEmail} />
         <Box className='px-4 md:px-20 py-8 cursor-default'>
-          <MainComponent />
+          <MainComponent profile={profile} hasResume={hasResume} />
           <Box className='px-4 md:px-20'>
-            <AboutMe />
-            <Experience />
-            <ContractualExperiences />
-            <DemoProjects />
-            <Contact />
+            <AboutMe
+              profile={profile}
+              skills={skills}
+              education={education}
+              sections={sections}
+            />
+            <Experience experiences={experiences} section={sections.experience} />
+            <ContractualExperiences
+              experiences={contractualExperiences}
+              section={sections.contractual}
+            />
+            <DemoProjects projects={projects} section={sections.projects} />
+            <Contact
+              links={socialLinks.contact}
+              profile={profile}
+              section={sections.contact}
+            />
           </Box>
         </Box>
-        <Footer />
+        <Footer profile={profile} />
       </main>
     </>
   )

@@ -364,7 +364,9 @@ async function seed() {
         leetcodeUsername: 'Greeed',
         showLeetcode: true,
         footerCredit: 'Designed & Built By Samiul Kabir',
-        attributionLabel: 'Web Design Idea',
+        // The link *text*. "Web Design Idea - " is static prose in Footer.js —
+        // see the note there for why the split falls this way.
+        attributionLabel: 'Brittany Chiang',
         attributionUrl: 'https://brittanychiang.com/',
       },
     });
@@ -405,7 +407,10 @@ async function seed() {
         institution: 'BRAC University',
         degree: "Bachelor's",
         field: 'Computer Science and Engineering',
-        note: null,
+        // Renders before the degree: "Completed UnderGraduation, Bachelor's in …".
+        // The site's two education sentences are worded differently and this is
+        // what lets the first one be reproduced exactly.
+        note: 'UnderGraduation',
         startYear: null,
         endYear: null,
       },
