@@ -14,6 +14,13 @@ import 'aos/dist/aos.css';
  * and drops any row without an anchor so a half-filled dashboard form cannot
  * produce a link to nowhere.
  *
+ * Each entry carries a full `href`, which is what lets one list hold both kinds
+ * of destination: `#about` scrolls this page, `/blog` leaves it. Routes go
+ * through `next/link` so navigation stays client-side; anchors stay plain `<a>`,
+ * because `Link` on a same-page fragment adds a history entry and a scroll
+ * behaviour nobody asked for. Blog appears only when a post is published — see
+ * `navFromSections`.
+ *
  * `sections` defaults to `[]` rather than to the old hardcoded list: an empty nav
  * on an unseeded database is obviously empty, whereas a fallback list would look
  * correct while linking to sections that are not there.
@@ -88,16 +95,25 @@ const Header = ({ sections = [] }) => {
                             }`}
                     >
                         <ul className="items-center justify-center space-y-8 md:flex md:space-x-6 md:space-y-0 font-semibold">
-                            {sections.map((section) => (
-                                <li key={section.key} className="text-gray-600 hover:text-[#7a61ff] my-2">
-                                    <a href={`#${section.anchor}`}>
+                            {sections.map((section) => {
+                                const label = section.numberLabel ? (
+                                    <>
                                         <span className='text-[#7a61ff]'>{section.numberLabel}</span> {section.label}
-                                    </a>
-                                </li>
-                            ))}
-                            {/* <li className="text-gray-600 hover:text-blue-600">
-                            <a href="javascript:void(0)">Blog</a>
-                        </li> */}
+                                    </>
+                                ) : (
+                                    section.label
+                                );
+
+                                return (
+                                    <li key={section.key} className="text-gray-600 hover:text-[#7a61ff] my-2">
+                                        {section.href.startsWith('#') ? (
+                                            <a href={section.href}>{label}</a>
+                                        ) : (
+                                            <Link href={section.href}>{label}</Link>
+                                        )}
+                                    </li>
+                                );
+                            })}
                         </ul>
                     </div>
                 </div>
