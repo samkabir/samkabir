@@ -820,6 +820,27 @@ values that reproduce it.
 
 ---
 
+### Step 1 Status: ✅ COMPLETE
+
+Seed script created: `prisma/seed.js`. Run `npm run db:seed` to populate database with:
+- 1 Profile (singleton with greeting, fullName, headline, bio, emails, leetcodeUsername, footer credit, attribution)
+- 1 SeoSettings (singleton with siteTitle, defaultDescription, canonicalUrl, twitterHandle)
+- 19 Skills (from data/skills.js, ordered by array index, all PUBLISHED)
+- 2 Education entries (from AboutMe.js: BRAC CSE, O and A Levels)
+- 5 Full-time Experience rows (from data/experience.js timeline parser: July 2025 - Present, May 2023 – June 2024, etc.)
+- 2 Contractual Experience rows (from data/contractualExperiences.js, July 2024 – September 2024, May 2023 – June 2024)
+- 16 Published Project rows (from data/projects.js, ordered by array position with generated cuids)
+- 3 Social Link rows (LinkedIn, GitHub, Facebook from SocialMediaLinks.js + Contact.js)
+- 6 Section Copy rows (about, skills, experience, contractual, projects, contact with nav labels, anchors, order)
+
+**Timeline parser note:** The script handles both U+002D (ASCII hyphen) and U+2013 (en dash) in timeline strings like "July 2025 - Present" and "May 2023 – June 2024". If a timeline doesn't match the expected format, the script throws with the original string, recording line and field.
+
+**Upsert logic:** Profiles and SectionCopy upsert on `id: 'singleton'` and `key` respectively. Skills upsert on `name`. Projects upsert on `slug`. For Education and Experience (no natural unique keys), the script skips if rows exist; use `npm run db:seed -- --reset` to delete and recreate them.
+
+**Committed:** `182436b feat(phase-7): seed script for idempotent database import`
+
+---
+
 ### Step 2 — Move the assets into Blob
 
 A second script, `scripts/import-assets.mjs`, run once:
