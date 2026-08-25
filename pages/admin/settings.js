@@ -9,7 +9,9 @@ import StatusChip, { Flag } from '@/components/admin/StatusChip';
 import { EmptyState, ErrorState, LoadingRows, PanelHeading } from '@/components/admin/States';
 import { useResource, useSingleton } from '@/components/admin/useResource';
 import { useToast } from '@/components/admin/Toast';
+import { api } from '@/lib/adminClient';
 import { withAdminPage } from '@/lib/adminPage';
+import { formatDateTime } from '@/lib/adminFormat';
 import { BUTTON_SM, HINT, LINK_ACTION, LINK_DANGER, PANEL } from '@/lib/adminTheme';
 import { nextOrder } from '@/lib/adminList';
 import { seoSettingsSchema } from '@/lib/validation/seo';
@@ -144,11 +146,36 @@ function sectionFields(isEdit) {
 function SettingsScreen({ adminUser }) {
   const seo = useSingleton('/api/admin/seo');
   const sections = useResource('/api/admin/section-copy', { query: { take: 50 } });
-  const { notifySaved } = useToast();
+  const { notifySaved, notifyError } = useToast();
 
   const [editing, setEditing] = useState(null);
   const [formOpen, setFormOpen] = useState(false);
   const [confirming, setConfirming] = useState(null);
+  const [rebuilding, setRebuilding] = useState(false);
+  const [rebuiltAt, setRebuiltAt] = useState(null);
+
+  /**
+   * The manual rebuild.
+   *
+   * Reports both outcomes, unlike the automatic rebuild after a save — this one
+   * was pressed deliberately, so silence would be the wrong answer either way.
+   * The timestamp is held in local state rather than read back from the server:
+   * it describes what happened in this session, which is what the person who
+   * just pressed the button is asking about.
+   */
+  async function rebuild() {
+    setRebuilding(true);
+
+    try {
+      const result = await api.post('/api/admin/revalidate');
+      setRebuiltAt(formatDateTime(result?.at ?? new Date().toISOString()));
+      notifySaved('The public site was rebuilt.');
+    } catch (error) {
+      notifyError(error?.message ?? 'The rebuild failed.');
+    } finally {
+      setRebuilding(false);
+    }
+  }
 
   const fields = useMemo(() => sectionFields(Boolean(editing)), [editing]);
 
@@ -349,23 +376,37 @@ function SettingsScreen({ adminUser }) {
       </Box>
 
       {/*
-        The rebuild control is described rather than offered.
+        The rebuild control, now that there is something to rebuild.
 
-        A button that appears to work and does nothing is worse than no button:
-        the user clicks it, sees no change on the public site, and concludes the
-        save failed. On-demand revalidation needs `pages/api/revalidate.js` and a
-        public site that reads from the database — both Phase 7 — so this says so
-        instead.
+        It was described rather than offered until Phase 7, on the grounds that a
+        button which appears to work and does nothing is worse than no button. The
+        public site now reads these records, so pressing this actually regenerates
+        the page — and unlike the automatic rebuild after each save, this one
+        reports whether it worked, because it was pressed on purpose.
       */}
       <Box className={`${PANEL} px-5 py-5`}>
         <PanelHeading title="Publishing" />
 
-        <Typography className={HINT}>
-          The public site still reads the static files in <code>data/</code>, so
-          nothing on this screen changes what a visitor sees yet. Phase 7 switches
-          the site over to these records and adds the rebuild control here — until
-          then there is nothing for it to rebuild.
+        <Typography className={`${HINT} pb-3`}>
+          Every save rebuilds the public page automatically. This is here for the
+          case where that did not take — a rebuild that failed, or content changed
+          directly in the database.
         </Typography>
+
+        <Box className="flex flex-wrap items-center gap-3">
+          <button
+            type="button"
+            className={BUTTON_SM}
+            disabled={rebuilding}
+            onClick={rebuild}
+          >
+            {rebuilding ? 'Rebuilding…' : 'Rebuild the public site'}
+          </button>
+
+          {rebuiltAt ? (
+            <Typography className={HINT}>Last rebuilt {rebuiltAt}.</Typography>
+          ) : null}
+        </Box>
       </Box>
 
       <EntityFormDialog

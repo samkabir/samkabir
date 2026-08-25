@@ -5,7 +5,7 @@ import AdminLayout, { adminScreen } from '@/components/admin/AdminLayout';
 import { EmptyState, PanelHeading } from '@/components/admin/States';
 import { Flag } from '@/components/admin/StatusChip';
 import { withAdminPage } from '@/lib/adminPage';
-import { HINT, PANEL } from '@/lib/adminTheme';
+import { HINT, LINK_ACTION, PANEL } from '@/lib/adminTheme';
 import { describeAuditEntry, formatDateTime } from '@/lib/adminFormat';
 
 /**
@@ -36,7 +36,7 @@ const SECTIONS = [
   { key: 'media', label: 'Uploaded files', href: null },
 ];
 
-function Overview({ adminUser, counts, drafts, activeResume, recent, todo }) {
+function Overview({ adminUser, counts, drafts, activeResume, recent, todo, lastRebuiltAt }) {
   const totalRecords = Object.values(counts).reduce((sum, count) => sum + count, 0);
   const totalDrafts = Object.values(drafts).reduce((sum, count) => sum + count, 0);
 
@@ -162,16 +162,20 @@ function Overview({ adminUser, counts, drafts, activeResume, recent, todo }) {
         <PanelHeading title="Publishing" />
 
         <Box className="flex flex-wrap items-center gap-3 pb-3">
-          <Flag label="Static" tone="warning" title="The public site is not reading the database yet" />
-          <Typography className={HINT}>Last rebuild: not tracked yet.</Typography>
+          <Flag label="Live" tone="success" title="The public site renders from these records" />
+          <Typography className={HINT}>
+            {lastRebuiltAt
+              ? `Last manual rebuild ${formatDateTime(lastRebuiltAt)}.`
+              : 'No manual rebuild yet.'}
+          </Typography>
         </Box>
 
         <Typography className={HINT}>
-          The public site still renders from the files in <code>data/</code>, so
-          nothing here is live to a visitor and nothing here can break the site.
-          Phase 7 seeds the database from those files, switches each section over,
-          and adds the rebuild control — which is when a “last rebuild” timestamp
-          starts having something to describe.
+          Every save here rebuilds the public page, so an edit is live on the next
+          reload. The timestamp above counts only the rebuild button on{' '}
+          <Link href="/admin/settings" className={LINK_ACTION}>Settings</Link> —
+          automatic rebuilds are not logged separately, because the edit that
+          triggered each one is already in the feed above.
         </Typography>
       </Box>
     </AdminLayout>
@@ -220,6 +224,7 @@ export const getServerSideProps = withAdminPage(async () => {
     profile,
     seo,
     recent,
+    lastRebuild,
   ] = await prisma.$transaction([
     prisma.experience.count(),
     prisma.project.count(),
@@ -252,6 +257,20 @@ export const getServerSideProps = withAdminPage(async () => {
       orderBy: { createdAt: 'desc' },
       take: 8,
       select: { id: true, action: true, entity: true, entityId: true, diff: true, createdAt: true },
+    }),
+
+    /**
+     * The last time someone pressed the rebuild button.
+     *
+     * Only the manual press is recorded — every save rebuilds the page too, but
+     * logging that as well would double the audit table to record something the
+     * mutation next to it already implies. So this answers "when did I last ask
+     * for a rebuild", which is the question the panel below is for.
+     */
+    prisma.auditLog.findFirst({
+      where: { action: 'revalidate' },
+      orderBy: { createdAt: 'desc' },
+      select: { createdAt: true },
     }),
   ]);
 
@@ -317,6 +336,7 @@ export const getServerSideProps = withAdminPage(async () => {
         ? { ...activeResume, uploadedAt: activeResume.uploadedAt.toISOString() }
         : null,
       recent: recent.map((entry) => ({ ...entry, createdAt: entry.createdAt.toISOString() })),
+      lastRebuiltAt: lastRebuild ? lastRebuild.createdAt.toISOString() : null,
     },
   };
 });
