@@ -4,8 +4,7 @@ Turning this static portfolio into a database-backed site with a private admin
 dashboard, so content is managed through a UI instead of by editing
 `data/*.js` and redeploying.
 
-**Status:** Phases 1–5 complete and verified. Phase 6 next, nothing blocking
-(see [`Todo/01-create-neon-database.md`](Todo/01-create-neon-database.md)).
+**Status:** Phases 1–6 complete. Phase 7 next, nothing blocking.
 
 ---
 
@@ -594,7 +593,7 @@ PDF itself. `npm run media:prune` was exercised for real in both report and
 
 ---
 
-## Phase 6 — Dashboard shell and portfolio CRUD
+## Phase 6 — Dashboard shell and portfolio CRUD ✅ COMPLETE
 
 **Objective.** The dashboard itself: layout, reusable table and form
 components, and working screens for every portfolio entity.
@@ -636,6 +635,64 @@ components, and working screens for every portfolio entity.
 | `/admin/blogs` | Status filter and search; full editor (Phase 8) |
 | `/admin/settings` | SEO defaults, OG image, section headings and numbering, footer credit, manual rebuild |
 | `/admin/account` | Change password, linked Google account, active sessions, recent sign-ins |
+
+### What was built, and where it differs from the plan
+
+All ten screens exist. Four deviations, each for a reason:
+
+1. **No drag library.** The plan allowed for one if MUI primitives fell short.
+   They did, but the HTML5 drag events cover the pointer half in about thirty
+   lines, and the keyboard path (↑/↓ per row) is the primary implementation
+   rather than an afterthought. No package was added in this phase at all.
+
+2. **Styling splits by ownership rather than moving wholesale to `sx`.** The
+   plan's mitigation for Tailwind's `important: true` fighting MUI was to put
+   admin styling through MUI's theme. What was done instead: hand-built controls
+   stay Tailwind — matching the public site and the Phase 4 login form, whose
+   class strings are now named once in `lib/adminTheme.js` instead of copied —
+   and components that ship their own stylesheet (Dialog, Snackbar, Tooltip) are
+   left entirely to a small MUI theme. The two are never mixed on one element,
+   which is where the collision would happen.
+
+3. **“Active sessions” on `/admin/account` is an explanation, not a list.**
+   Sessions are signed JWTs in a cookie, not rows, so nothing server-side can
+   enumerate or individually revoke them. The screen says so, and says what does
+   work immediately: removing the address from `ADMIN_EMAILS` ends every session
+   everywhere on the next request, because every request re-checks the allowlist.
+
+4. **Three controls describe themselves instead of pretending.** The rebuild
+   button (needs Phase 7's revalidation endpoint), the “last rebuild” timestamp
+   (nothing tracks it yet) and the blog editor (Phase 8) are stated as not-yet
+   rather than shipped as controls that appear to work and change nothing.
+
+### Verified
+
+123 checks against the running dev server and the live database: every screen
+redirecting when signed out and rendering when signed in; no password hash in any
+page's markup; `adminUser` in props being exactly the six-field allowlist; every
+entity created, edited, reordered, published and deleted through the same request
+bodies the forms build; every field-level rejection reaching the input it belongs
+to; the CV flow end to end. Plus 143 unit assertions over the pure form, list,
+client and formatting logic.
+
+**Not verified: the browser.** Post-mount fetching, optimistic rollback, the drag
+interaction, dialog focus behaviour and tablet-width layout are built for and
+reviewed but not observed — there is no browser automation here, and the
+components cannot be unit-tested either because they are JSX in `.js` files,
+which Vite does not transform. Closing that gap needs either a manual pass
+through the ten screens or a new dev dependency. See
+[ADR 0006](docs/adr/0006-dashboard.md).
+
+### Two bugs this phase produced, both fixed
+
+- **The context providers were below the code that needed them.** `AdminLayout`
+  rendered them around its children, but every screen renders `AdminLayout` from
+  its own body — so a screen's own hooks ran above the provider it was mounting.
+  Nine of ten screens returned 500. Lint, the build and 419 unit tests all
+  passed; only rendering the pages against a real server caught it.
+- **An empty slug field posted `''`**, which `slug()` rejects, so creating a
+  project without inventing a URL failed with "Required." on a field left blank
+  deliberately. Omission is the only value meaning "derive it".
 
 ---
 

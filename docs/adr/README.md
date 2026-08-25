@@ -13,3 +13,4 @@ usually gets lost — what was rejected and why.
 | [0003](0003-admin-api.md) | Admin API: one handler pattern, guarded by construction | 3 |
 | [0004](0004-authentication.md) | Authentication: three gates, no registration path | 4 |
 | [0005](0005-file-storage.md) | File storage: bytes decide the type, and deletion order matters | 5 |
+| [0006](0006-dashboard.md) | The dashboard: one set of components, and a provider in the wrong place | 6 |

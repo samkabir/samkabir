@@ -36,6 +36,32 @@ imports them.
 ## External Calls
 - Client-side fetch to LeetCode stats API: https://leetcode-stats-api.herokuapp.com/greeed
 
+## The dashboard
+
+Ten screens under `/admin`, listed in `lib/adminNav.js`:
+
+| Screen | What it manages |
+|---|---|
+| `/admin` | Counts, what is still missing, recent changes, the active CV |
+| `/admin/bio` | The identity block, and education rows |
+| `/admin/experiences` | Full-time and contractual roles, in two tabs over one list |
+| `/admin/projects` | Projects, the featured flag, cover images |
+| `/admin/skills` | Skills, in the order they are displayed |
+| `/admin/links` | Social links, and where each one appears |
+| `/admin/resume` | Versioned CV uploads and which one `/cv` serves |
+| `/admin/blogs` | Posts (list, publish, delete) and tags. The editor is Phase 8 |
+| `/admin/settings` | SEO defaults and section headings |
+| `/admin/account` | Password, linked sign-in methods, recent sign-ins |
+
+Every page is guarded by `withAdminPage` in `lib/adminPage.js`, which runs the
+same session check the API does — including the "is this address still on
+`ADMIN_EMAILS`" re-check that the edge middleware cannot perform. See
+[adr/0006-dashboard.md](adr/0006-dashboard.md) for how the screens are built, and
+for the two bugs that phase produced.
+
+The screens fetch their data after mount, so nothing in a page's HTML is content.
+Saving goes through the same `/api/admin/*` endpoints any other client would use.
+
 ## Admin API and authentication
 The dashboard's backend lives under `/api/admin`, and sign-in at `/admin/login`.
 See [api.md](api.md) for the endpoint reference,

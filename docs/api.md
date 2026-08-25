@@ -288,9 +288,15 @@ GET  /api/admin/account           who am I
 POST /api/admin/account/password  change password                    → 204
 ```
 
-`GET` returns the same fields `getSessionUser` resolved, plus `hasPassword` — a
-boolean, not the hash — so the dashboard can offer "set a password" for an
-account that has only ever used Google.
+`GET` returns the same fields `getSessionUser` resolved, plus two derived facts
+about how the account can sign in:
+
+- `hasPassword` — a boolean, not the hash — so the dashboard can offer "set a
+  password" for an account that has only ever used Google.
+- `linkedProviders` — `[{ provider, linkedAt }]`. The `providerAccountId` is
+  deliberately absent: it identifies the Google account itself, the dashboard has
+  no use for it, and a value with no use is a value that only has downsides if it
+  leaks.
 
 `POST` takes `{ currentPassword?, newPassword }`. The current password is
 required whenever one is set. That is the check which makes a stolen session
@@ -378,5 +384,8 @@ describes.
 | Magic bytes, size caps, storage keys, dimensions | `lib/uploads.js` |
 | Upload handler | `lib/api/resources/upload.js` |
 | Media relations the prune script must know about | `lib/mediaRelations.js` |
+| Password policy, with no bcrypt dependency so the form can share it | `lib/passwordPolicy.js` |
+| The dashboard's HTTP client, error envelope and 401 handling | `lib/adminClient.js` |
+| Server-side page guard | `lib/adminPage.js` |
 
 Route files under `pages/api/admin/` are three lines each and contain no logic.
