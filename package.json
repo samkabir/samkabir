@@ -22,7 +22,8 @@
     "test:watch": "vitest",
     "admin:create": "node scripts/with-env.mjs node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/create-admin.mjs",
     "admin:reset-password": "node scripts/with-env.mjs node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/reset-password.mjs",
-    "media:prune": "node scripts/with-env.mjs node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/prune-media.mjs"
+    "media:prune": "node scripts/with-env.mjs node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/prune-media.mjs",
+    "assets:import": "node scripts/with-env.mjs node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/import-assets.mjs"
   },
   "dependencies": {
     "@emotion/react": "^11.10.5",

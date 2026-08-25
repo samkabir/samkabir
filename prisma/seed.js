@@ -287,7 +287,20 @@ const projectsData = [
   },
 ];
 
-// NDA projects to import as drafts (confirm with user before uncommenting)
+/**
+ * The three projects `data/projects.js` keeps commented out.
+ *
+ * They are not on the site today, so importing them is a content decision rather
+ * than part of the migration — which is why it takes a flag rather than
+ * happening by default:
+ *
+ *     npm run db:seed -- --include-nda
+ *
+ * They import as DRAFT either way, so even with the flag nothing becomes visible
+ * to a visitor until it is published from the dashboard. Their screenshots stay
+ * on disk until then: `scripts/import-assets.mjs` only uploads covers for
+ * projects that have a row.
+ */
 const ndaProjectsData = [
   {
     name: 'CasinoBlogs',
@@ -331,6 +344,7 @@ async function seed() {
   try {
     const args = process.argv.slice(2);
     const shouldReset = args.includes('--reset');
+    const includeNda = args.includes('--include-nda');
 
     console.log('🌱 Starting seed...');
 
@@ -504,6 +518,38 @@ async function seed() {
       });
     }
 
+    /**
+     * The NDA drafts, only when asked for.
+     *
+     * `order` continues past the published set so publishing one later puts it at
+     * the end rather than in the middle of the existing order.
+     */
+    if (includeNda) {
+      console.log('🔒 Seeding NDA projects as drafts...');
+      for (let i = 0; i < ndaProjectsData.length; i++) {
+        const proj = ndaProjectsData[i];
+        await prisma.project.upsert({
+          where: { slug: proj.slug },
+          // Status is deliberately not forced on update: if one of these has been
+          // published from the dashboard, re-running the seed must not retract it.
+          update: {},
+          create: {
+            id: cuid(),
+            slug: proj.slug,
+            title: proj.name,
+            description: proj.description,
+            repoUrl: proj.github,
+            liveUrl: proj.liveUrl,
+            stacks: proj.stacks,
+            isFeatured: false,
+            isNda: true,
+            order: projectsData.length + i,
+            status: 'DRAFT',
+          },
+        });
+      }
+    }
+
     // Social Links — upsert via findUnique on url (store URL as unique proxy)
     console.log('🔗 Seeding Social Links...');
     const socialLinksData = [
@@ -658,8 +704,14 @@ async function seed() {
     console.log(`  - ${projectsData.length} Published projects`);
     console.log(`  - ${socialLinksData.length} Social links`);
     console.log(`  - ${sectionCopyData.length} Section copy entries`);
-    console.log('\n💡 Note: The 3 NDA projects are available in ndaProjectsData but commented out.');
-    console.log('   Run with --import-nda flag or manually import them as DRAFT projects.');
+
+    if (includeNda) {
+      console.log(`  - ${ndaProjectsData.length} NDA projects, as drafts`);
+    } else {
+      console.log(
+        `\n💡 ${ndaProjectsData.length} NDA projects were not imported. Add --include-nda to bring them in as drafts.`
+      );
+    }
   } catch (error) {
     console.error('❌ Seed failed:', error.message);
     throw error;
