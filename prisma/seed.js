@@ -117,7 +117,6 @@ const projectsData = [
     description: 'This Website has 45 Routes, 1 home, 2 private, 1 login, 1 detail(for each product). Purchase and DashBoard and its sub Routes are Private. DashBoard has Two type of access, one is User level access and one is admin level access.',
     stacks: ['React JS', 'Node JS', 'Mongo DB', 'Express JS', 'Material UI', 'Bootstrap', 'React Router'],
     isFeatured: true,
-    image: '/images/projects/project1/1.webp',
     isNda: false,
   },
   {
@@ -128,7 +127,6 @@ const projectsData = [
     description: 'This Website has 7 Routes, 1 home, 3 private, 1 login, 1 detail(for each service) and 1 404 page. My Bookings, Manage All Bookings and Add a Tour Plan Routes are Private. The website has one login system - Google SignIn.',
     stacks: ['React JS', 'Node JS', 'Mongo DB', 'Express JS', 'Material UI', 'Tailwind', 'React Router'],
     isFeatured: true,
-    image: '/images/projects/project2/1.webp',
     isNda: false,
   },
   {
@@ -139,7 +137,6 @@ const projectsData = [
     description: 'This Website has 6 Routes, 1 home, 2 private, 1 login, 1 detail(for each service) and 1 404 page. The website has two login system, one Google SignIn and a Email and Password SignIn. The Website has Home, About, Appointment, Login and Details of the services pages.',
     stacks: ['React JS', 'Node JS', 'Material UI', 'Bootstrap', 'React Router'],
     isFeatured: true,
-    image: '/images/projects/project3/1.webp',
     isNda: false,
   },
   {
@@ -150,7 +147,6 @@ const projectsData = [
     description: 'This is a simple Project for a competition. *Due to NDA, github repo has been made private, but can be made public upon request.',
     stacks: ['Next JS', 'React-Map-GL', 'Material UI', 'tailwind', 'React Router'],
     isFeatured: false,
-    image: '/images/projects/barikoi/1.PNG',
     isNda: true,
   },
   {
@@ -161,7 +157,6 @@ const projectsData = [
     description: 'This is a simple Project for a competition. *Due to NDA, github repo has been made private, but can be made public upon request.',
     stacks: ['React JS', 'React-Map-GL', 'Material UI', 'tailwind', 'React Router'],
     isFeatured: false,
-    image: '/images/projects/honestelite/1.PNG',
     isNda: true,
   },
   {
@@ -172,7 +167,6 @@ const projectsData = [
     description: '',
     stacks: ['PSD to HTML', 'Bootstrap'],
     isFeatured: false,
-    image: '/images/projects/foodnetwork/1.PNG',
     isNda: false,
   },
   {
@@ -183,7 +177,6 @@ const projectsData = [
     description: 'This is a Simple Static Landing Page',
     stacks: ['PSD to HTML', 'Bootstrap'],
     isFeatured: false,
-    image: '/images/projects/music/1.PNG',
     isNda: false,
   },
   {
@@ -194,7 +187,6 @@ const projectsData = [
     description: 'This is a Simple Static Landing Page',
     stacks: ['PSD to HTML', 'Bootstrap'],
     isFeatured: false,
-    image: '/images/projects/Mache/1.PNG',
     isNda: false,
   },
   {
@@ -205,7 +197,6 @@ const projectsData = [
     description: 'This is a Simple Static Landing Page',
     stacks: ['PSD to HTML', 'Bootstrap'],
     isFeatured: false,
-    image: '/images/projects/loginpage/1.PNG',
     isNda: false,
   },
   {
@@ -216,7 +207,6 @@ const projectsData = [
     description: 'This is a simple Project for a competition. *Due to NDA, github repo has been made private, but can be made public upon request.',
     stacks: ['React JS', 'React-Map-GL', 'Material UI', 'tailwind', 'React Router'],
     isFeatured: false,
-    image: '/images/projects/itechsoft/1.PNG',
     isNda: true,
   },
   {
@@ -227,7 +217,6 @@ const projectsData = [
     description: '',
     stacks: ['React JS', 'REST API', 'Material UI', 'Tailwind'],
     isFeatured: false,
-    image: '/images/projects/openlibrary/1.PNG',
     isNda: false,
   },
   {
@@ -238,7 +227,6 @@ const projectsData = [
     description: '',
     stacks: ['React JS', 'REST API', 'Context API', 'Material UI', 'Tailwind'],
     isFeatured: false,
-    image: '/images/projects/fakestore/1.PNG',
     isNda: false,
   },
   {
@@ -249,7 +237,6 @@ const projectsData = [
     description: '',
     stacks: ['React JS', 'REST API', 'Context API', 'Material UI', 'Tailwind'],
     isFeatured: false,
-    image: '/images/projects/talkshow/1.PNG',
     isNda: false,
   },
   {
@@ -260,7 +247,6 @@ const projectsData = [
     description: '',
     stacks: ['React JS', 'Material UI', 'tailwind', 'React Router'],
     isFeatured: false,
-    image: '/images/projects/mathacademy/1.PNG',
     isNda: false,
   },
   {
@@ -271,7 +257,6 @@ const projectsData = [
     description: '',
     stacks: ['PSD to HTML', 'Bootstrap', 'Responsive'],
     isFeatured: false,
-    image: '/images/projects/honda/1.PNG',
     isNda: false,
   },
   {
@@ -282,7 +267,6 @@ const projectsData = [
     description: '',
     stacks: ['PSD to HTML', 'Bootstrap', 'Responsive'],
     isFeatured: false,
-    image: '/images/projects/football/1.PNG',
     isNda: false,
   },
 ];
@@ -310,7 +294,6 @@ const ndaProjectsData = [
     description: 'This is a Live Project that has been deployed. *Due to NDA, github repo has been made private, but can be made public upon request.',
     stacks: ['Next JS', 'Material UI', 'Tailwind', 'React Router'],
     isFeatured: false,
-    image: '/images/projects/CasinoBlogs/2.webp',
     isNda: true,
     status: 'DRAFT',
   },
@@ -322,7 +305,6 @@ const ndaProjectsData = [
     description: 'This is a Live Project that has been deployed. *Due to NDA, github repo has been made private, but can be made public upon request.',
     stacks: ['Next JS', 'Material UI', 'Tailwind', 'React Router'],
     isFeatured: false,
-    image: '/images/projects/gamblingcoin/1.PNG',
     isNda: true,
     status: 'DRAFT',
   },
@@ -334,7 +316,6 @@ const ndaProjectsData = [
     description: 'This is a Live Project that has been deployed. *Due to NDA, github repo has been made private, but can be made public upon request.',
     stacks: ['Next JS', 'Material UI', 'Tailwind', 'React Router'],
     isFeatured: false,
-    image: '/images/projects/casinohubs/1.PNG',
     isNda: true,
     status: 'DRAFT',
   },

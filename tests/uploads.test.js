@@ -15,13 +15,41 @@ import {
 const asset = (relative) =>
   readFileSync(path.join(import.meta.dirname, '..', 'public', relative));
 
-/** Real files from the repository, not synthesised headers. */
+const fixture = (name) =>
+  readFileSync(path.join(import.meta.dirname, 'fixtures', name));
+
+/**
+ * Real encoder output, not synthesised headers.
+ *
+ * These pointed at the project screenshots and the CV in `public/` until Phase 7
+ * moved those into Blob and deleted them — the fixtures below took over so the
+ * coverage did not leave with the content. They are still real files: `sharp`
+ * produced the images and the PDF is a valid one-page document, so the chunk
+ * layouts and marker chains being parsed are genuine rather than hand-forged
+ * prefixes. The synthesised-buffer tests further down are deliberately separate,
+ * because they probe malformed input.
+ *
+ * Two properties are worth keeping in mind when editing them:
+ *
+ *   * **The dimensions are asserted exactly**, and were chosen to match the
+ *     screenshots they replace, so re-generating a fixture at a different size
+ *     breaks the tests loudly rather than weakening them quietly.
+ *   * **The two WebPs are different sub-formats** — VP8 lossy and VP8L lossless.
+ *     That is better coverage than the two lossy files here before: a parser that
+ *     handles only one reads the wrong bytes for the other, and "RIFF….WEBP" is
+ *     identical in both.
+ *
+ * `png` still points at the real site logo, which Phase 7 kept.
+ */
 const REAL = {
   png: 'images/Logo.png',
-  webpVp8: 'images/projects/project1/1.webp',
-  webpLarge: 'images/projects/CasinoBlogs/2.webp',
-  pdf: 'assets/Samiul_Kabir_Resume.pdf',
-  screenshot: 'images/projects/talkshow/1.PNG',
+};
+
+const FIXTURE = {
+  webpVp8: 'lossy.webp',
+  webpLarge: 'lossless.webp',
+  pdf: 'document.pdf',
+  screenshot: 'screenshot.png',
 };
 
 describe('type detection from real files', () => {
@@ -36,11 +64,11 @@ describe('type detection from real files', () => {
   it('identifies a WebP, not just the RIFF container', () => {
     // "RIFF" alone is also WAV and AVI. The check has to read the second
     // signature at offset 8, or an audio file passes as an image.
-    expect(sniffType(asset(REAL.webpVp8)).mime).toBe('image/webp');
+    expect(sniffType(fixture(FIXTURE.webpVp8)).mime).toBe('image/webp');
   });
 
   it('identifies a PDF', () => {
-    expect(sniffType(asset(REAL.pdf))).toEqual({
+    expect(sniffType(fixture(FIXTURE.pdf))).toEqual({
       mime: 'application/pdf',
       extension: 'pdf',
       kind: 'document',
@@ -84,7 +112,7 @@ describe('type detection from real files', () => {
 describe('the bytes decide, not the name or the header', () => {
   it('rejects a PDF renamed and declared as a PNG', () => {
     const result = inspectUpload({
-      buffer: asset(REAL.pdf),
+      buffer: fixture(FIXTURE.pdf),
       declaredMime: 'image/png',
       declaredName: 'totally-an-image.png',
     });
@@ -152,7 +180,7 @@ describe('the bytes decide, not the name or the header', () => {
   it('accepts a file with no declared type at all, judging by bytes alone', () => {
     // Some clients send nothing. The bytes are the authority anyway, so a
     // missing header is not a failure.
-    const result = inspectUpload({ buffer: asset(REAL.pdf), declaredName: 'cv.pdf' });
+    const result = inspectUpload({ buffer: fixture(FIXTURE.pdf), declaredName: 'cv.pdf' });
     expect(result.ok).toBe(true);
     expect(result.mime).toBe('application/pdf');
   });
@@ -268,27 +296,27 @@ describe('image dimensions from real files', () => {
   });
 
   it('reads a large screenshot PNG', () => {
-    const dims = readImageDimensions(asset(REAL.screenshot), 'image/png');
+    const dims = readImageDimensions(fixture(FIXTURE.screenshot), 'image/png');
     expect(dims.width).toBe(1341);
     expect(dims.height).toBe(656);
   });
 
   it('reads WebP', () => {
-    expect(readImageDimensions(asset(REAL.webpVp8), 'image/webp')).toEqual({
+    expect(readImageDimensions(fixture(FIXTURE.webpVp8), 'image/webp')).toEqual({
       width: 720,
       height: 318,
     });
   });
 
   it('reads a large WebP', () => {
-    expect(readImageDimensions(asset(REAL.webpLarge), 'image/webp')).toEqual({
+    expect(readImageDimensions(fixture(FIXTURE.webpLarge), 'image/webp')).toEqual({
       width: 1916,
       height: 908,
     });
   });
 
   it('returns null for a PDF rather than guessing', () => {
-    expect(readImageDimensions(asset(REAL.pdf), 'application/pdf')).toBe(null);
+    expect(readImageDimensions(fixture(FIXTURE.pdf), 'application/pdf')).toBe(null);
   });
 
   it('returns null on a truncated header instead of throwing', () => {
@@ -370,14 +398,28 @@ describe('image dimensions from real files', () => {
   });
 });
 
-describe('every real asset in the repository', () => {
+describe('every format the site actually serves', () => {
   it('is recognised, and every image yields dimensions', () => {
-    // A sweep over the files Phase 7 will import, so a format the site already
-    // uses cannot be one the uploader would reject.
-    const files = [REAL.png, REAL.webpVp8, REAL.webpLarge, REAL.pdf, REAL.screenshot];
+    /**
+     * A sweep over the formats in use, so one the site already serves cannot be
+     * one the uploader would reject.
+     *
+     * This used to walk the twenty-odd files in `public/` before Phase 7 moved
+     * them into Blob. Enumerating formats rather than files is what it was
+     * really testing: PNG, WebP in both sub-formats, and PDF are what the media
+     * library holds, and a new format would be a deliberate addition here rather
+     * than something that arrived with a screenshot.
+     */
+    const files = [
+      ['public', REAL.png],
+      ['fixture', FIXTURE.webpVp8],
+      ['fixture', FIXTURE.webpLarge],
+      ['fixture', FIXTURE.pdf],
+      ['fixture', FIXTURE.screenshot],
+    ];
 
-    for (const file of files) {
-      const buffer = asset(file);
+    for (const [where, file] of files) {
+      const buffer = where === 'public' ? asset(file) : fixture(file);
       const result = inspectUpload({ buffer, declaredName: file.split('/').pop() });
 
       expect(result.ok, file).toBe(true);
@@ -387,5 +429,19 @@ describe('every real asset in the repository', () => {
         expect(result.height, `${file} height`).toBeGreaterThan(0);
       }
     }
+  });
+
+  it('covers both WebP sub-formats, which share a container signature', () => {
+    // "RIFF….WEBP" is byte-identical for VP8 and VP8L; the dimensions live in
+    // different places and are packed differently. Reading one correctly says
+    // nothing about the other, so both are asserted rather than assumed.
+    expect(readImageDimensions(fixture(FIXTURE.webpVp8), 'image/webp')).toEqual({
+      width: 720,
+      height: 318,
+    });
+    expect(readImageDimensions(fixture(FIXTURE.webpLarge), 'image/webp')).toEqual({
+      width: 1916,
+      height: 908,
+    });
   });
 });

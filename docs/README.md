@@ -6,15 +6,39 @@ This project is a personal portfolio website built with the Next.js pages router
 ## Structure
 - pages/: Route entry points. The home page is pages/index.js.
 - components/: Section components and UI cards.
-- data/: Content arrays for skills, experience, and projects.
-- public/: Static assets (images and resume PDF).
+- lib/content.js: The only place the public site reads content from.
+- public/: The logos and the favicon. Everything else is in object storage.
 - styles/: Global styles and Tailwind setup.
 
 ## Content Sources
-- data/skills.js: List of skills rendered in the About section.
-- data/experience.js: Full-time experience timeline.
-- data/contractualExperiences.js: Contract roles.
-- data/projects.js: Project list and images.
+
+All of it comes from the database. There is no `data/` directory any more — Phase
+7 deleted `skills.js`, `experience.js`, `contractualExperiences.js` and
+`projects.js` after seeding their contents into Postgres. `git log` has them if a
+value ever needs checking against the original.
+
+`lib/content.js` is the single read layer, and it guarantees four things that are
+easy to get wrong once per page instead of once per project:
+
+1. **Every query filters `status: 'PUBLISHED'`.** One module means
+   `grep -c PUBLISHED` is the audit.
+2. **Ordering matches the dashboard**, copied from `lib/api/resources/`. If they
+   drift, drag-to-reorder starts lying about what a visitor sees.
+3. **No `Date` and no `undefined` crosses the boundary** — `getStaticProps`
+   refuses both. Dates become display strings there, once.
+4. **It is never imported by a client component**, because it touches Prisma.
+
+`pages/index.js` calls `getPageContent()` from `getStaticProps` with
+`revalidate: 60`, and every dashboard save additionally rebuilds the page on
+demand — so an edit is live on the next reload. The timer is the backstop for a
+revalidation that fails, which is why it stays short rather than moving to an
+hour.
+
+To repopulate an empty database:
+
+    npm run db:seed                      # content
+    npm run db:seed -- --include-nda     # …plus the three NDA projects, as drafts
+    npm run assets:import                # covers and the CV (see the note in that script)
 
 ## Styling
 - Tailwind classes are used directly in JSX for layout and spacing.
@@ -24,14 +48,19 @@ This project is a personal portfolio website built with the Next.js pages router
 ## Assets
 Uploaded media lives in object storage, not in the repository — see
 [adr/0005-file-storage.md](adr/0005-file-storage.md). `/cv` is a permanent link
-that redirects to whichever CV version is currently active.
+that redirects to whichever CV version is currently active, so replacing a CV is
+an upload rather than a commit and every link already shared keeps working.
 
-The files below are the original static assets, still in use until Phase 7
-imports them.
+What is left in `public/` is only what is not content:
 
-- Resume PDF: public/assets/Samiul_Kabir_Resume.pdf
 - Logos: public/images/Logo.png and public/images/Logo1.png
-- Project images: public/images/projects/**
+- favicon.ico
+
+The sixteen project screenshots and the CV moved to Blob in Phase 7 and were
+deleted from the repository. Project covers are served through `next/image` from
+`*.public.blob.vercel-storage.com`, which `next.config.js` allowlists — the
+optimiser refuses a host it has not been told about, so adding a storage provider
+means adding it there.
 
 ## External Calls
 - **LeetCode solved count** — `/api/leetcode` queries LeetCode's own GraphQL
@@ -45,8 +74,10 @@ imports them.
 
   Going through this site's own server removes the CORS question entirely (it
   applies to browsers, not to server-to-server requests) and removes the mirror
-  that could go offline. The username lives in `lib/leetcode.js` until Phase 7
-  reads it from `Profile.leetcodeUsername`.
+  that could go offline. The username comes from `Profile.leetcodeUsername`, and
+  `Profile.showLeetcode` is honoured by the endpoint as well as by the component —
+  hiding the block client-side alone would leave the endpoint answering for a
+  profile the owner had chosen to stop publishing.
 
 ## The dashboard
 
@@ -72,7 +103,10 @@ same session check the API does — including the "is this address still on
 for the two bugs that phase produced.
 
 The screens fetch their data after mount, so nothing in a page's HTML is content.
-Saving goes through the same `/api/admin/*` endpoints any other client would use.
+Saving goes through the same `/api/admin/*` endpoints any other client would use,
+and each successful mutation rebuilds the public page before it responds. The
+button on `/admin/settings` does the same thing manually, for the case where that
+did not take.
 
 ## Admin API and authentication
 The dashboard's backend lives under `/api/admin`, and sign-in at `/admin/login`.
@@ -97,4 +131,5 @@ There is no registration endpoint and no password-reset email flow. Recovery is
 - Test: npm test
 - Database: npm run db:migrate, npm run db:studio, npm run db:smoke
 - Admin account: npm run admin:create, npm run admin:reset-password
+- Seed content: npm run db:seed (add -- --reset to replace experience and education)
 - Media cleanup: npm run media:prune (add -- --apply to delete)

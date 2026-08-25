@@ -30,6 +30,15 @@ import { inspectUpload, storageKey } from '../lib/uploads.js';
  * finishes the job instead of duplicating it. `--force` re-uploads anyway, which
  * is only useful if a file was replaced on disk.
  *
+ * **This migration has already run, and its inputs are gone.** Step 7 deleted
+ * `public/images/projects/**` and `public/assets/Samiul_Kabir_Resume.pdf` — the
+ * files now live in Blob and the `Media` rows point at them. The script is kept
+ * because it documents where every stored file came from and what its alt text
+ * says, which is not recorded anywhere else. To run it again, restore the
+ * originals first:
+ *
+ *     git checkout 639815e -- public/images/projects public/assets
+ *
  * Usage:
  *   npm run assets:import
  *   npm run assets:import -- --dry-run
