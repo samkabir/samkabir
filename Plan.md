@@ -4,7 +4,7 @@ Turning this static portfolio into a database-backed site with a private admin
 dashboard, so content is managed through a UI instead of by editing
 `data/*.js` and redeploying.
 
-**Status:** Phases 1–8 complete. Phase 9 (security hardening) next, nothing blocking.
+**Status:** Phases 1–9 complete. Phase 10 (documentation) next, nothing blocking.
 
 The public site now renders from the database. The homepage went from 2,686
 bytes of spinner to 85,004 bytes of real HTML, `data/` and the local assets are
@@ -1165,7 +1165,7 @@ list at `pages/admin/blogs/index.js` links into both.
 
 ---
 
-## Phase 9 — Security hardening and test suite
+## Phase 9 — Security hardening and test suite ✅ COMPLETE
 
 **Objective.** Attack the system deliberately, then close what that finds.
 This phase assumes the implementation is wrong until tested.
@@ -1186,6 +1186,52 @@ This phase assumes the implementation is wrong until tested.
   from a template.
 - **Result:** a test suite whose failures would be real security regressions,
   and a documented threat model.
+
+### What was built
+
+- **Security headers.** `lib/securityHeaders.js` (pure, dev/prod-aware builders)
+  applied through a new `async headers()` in `next.config.mjs`: CSP,
+  `X-Content-Type-Options`, `Referrer-Policy`, `X-Frame-Options`,
+  `Permissions-Policy` on every response; HSTS and `upgrade-insecure-requests`
+  production-only; `X-Robots-Tag: noindex` + `no-store` layered on `/admin/*` and
+  `/api/admin/*`. `tests/securityHeaders.test.js` pins the contract, including the
+  dev/prod differences, and asserts the config actually applies it.
+- **A real bug, found and fixed.** `getPostNeighbours` spread `livePosts()` and
+  then overwrote its `publishedAt` constraint, dropping the `lte: now` cap — a
+  post scheduled for the future leaked as a "next" neighbour link, slug and title,
+  before its publication date. Constraints are now merged.
+  `tests/draftVisibility.test.js` proves drafts and scheduled posts are unreachable
+  by slug, listing, sitemap and neighbour link, using a faithful in-memory Prisma
+  stand-in rather than a real database.
+- **Secret scan** across the full git history: no real secret ever committed —
+  only `.env.example` (names, no values) and fake illustrative strings.
+- **Dependency audit.** `npm audit fix` resolved three Next.js advisories plus
+  `postcss` and `sharp`. Three remain in the Prisma **CLI** chain
+  (`deepmerge-ts`), a build-time devDependency whose only "fix" downgrades Prisma
+  below the schema's version — accepted and documented rather than regressed.
+- **Threat model** written to `docs/security.md`: assets, the three auth gates,
+  the header rationale (including why CSP keeps `'unsafe-inline'` and what that
+  does and does not protect), content visibility, uploads, XSS/injection/CSRF, the
+  secret-scan and audit results, and the residual risks.
+
+### Three deviations from the plan above, each deliberate
+
+1. **No `middleware.js` rate limiting was added.** The plan listed it, but login —
+   the one thing worth throttling — is already rate-limited in `lib/rateLimit.js`,
+   backed by the audit log so the limit survives serverless cold starts and is
+   shared across instances. A per-IP edge limiter in front of the whole site would
+   be a second, weaker limiter (in-memory, per-instance) for endpoints that are
+   already static or already guarded, so it was not added.
+2. **The threat model lives in `docs/security.md`, which Phase 10 also names.**
+   Rather than a throwaway note now and the real doc later, the real doc is written
+   now and Phase 10 links it. This follows the plan's own mitigation — keep the
+   docs current at the end of each phase rather than all at the end.
+3. **Most of the planned attack tests already existed.** Phases 3–8 built the
+   auth-gate, upload magic-byte, injection-shaped-input and JSON-LD-escaping tests
+   as they built each feature. Phase 9 audited that coverage, added the two genuine
+   gaps (response headers and draft/scheduled visibility), and `docs/security.md`
+   maps every claimed property to the test that guards it — rather than duplicating
+   assertions that were already there.
 
 ---
 
