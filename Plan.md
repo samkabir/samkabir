@@ -4,7 +4,8 @@ Turning this static portfolio into a database-backed site with a private admin
 dashboard, so content is managed through a UI instead of by editing
 `data/*.js` and redeploying.
 
-**Status:** Phases 1–9 complete. Phase 10 (documentation) next, nothing blocking.
+**Status:** Phases 1–10 complete. Phase 11 (deployment) next — it needs the owner's
+production accounts, so it is the one phase that cannot be finished unattended.
 
 The public site now renders from the database. The homepage went from 2,686
 bytes of spinner to 85,004 bytes of real HTML, `data/` and the local assets are
@@ -1235,7 +1236,7 @@ This phase assumes the implementation is wrong until tested.
 
 ---
 
-## Phase 10 — Documentation and CLAUDE.md
+## Phase 10 — Documentation and CLAUDE.md ✅ COMPLETE
 
 **Objective.** Write down everything a future session or developer would
 otherwise have to rediscover, including decisions not visible in the code.
@@ -1254,6 +1255,53 @@ otherwise have to rediscover, including decisions not visible in the code.
   database. If a step is missing, the doc is wrong — not the reader.
 - **Risks:** docs written once and never updated. Mitigated by keeping
   `CLAUDE.md` current at the end of each phase rather than all at the end.
+
+### What was built
+
+- **`CLAUDE.md`** (new, root) — orientation for a future session: stack, where
+  things live, commands, and the nine invariants that must not be changed casually,
+  each pointing at the file that enforces it.
+- **`docs/setup.md`** — clean-clone-to-running: prerequisites, the env-var table,
+  and the Neon / Google OAuth / Vercel Blob steps step by step (these had lived in
+  `Todo/01–03`, which were deleted once done). Ends with a troubleshooting section
+  for the failures that actually happen (cookie/`NEXTAUTH_URL` mismatch, private
+  Blob store, pooled URL in the migration slot).
+- **`docs/architecture.md`** — the two halves, rendering/freshness, the three auth
+  gates, the API layer, validation, the dashboard toolkit, the data model and
+  storage, each deep-linking the relevant ADR.
+- **`docs/content-management.md`** — plain-language "how do I edit X" per content
+  type, written for the owner (a beginner): bio, experience, projects, skills,
+  links, CV, blog + tags, settings, account, and the draft/publish and
+  unpublish-vs-delete distinctions.
+- **`docs/deployment.md`** — the Vercel procedure and a post-deploy verification
+  checklist, honestly marked where a step is Phase 11 (not yet executed live).
+- **Three new ADRs** — 0007 (public-site rendering), 0008 (blog + Markdown
+  sanitisation), 0009 (security headers + the CSP tradeoff) — with the index table
+  updated.
+- **Refreshed `AGENTS.md`** and touched-up `docs/README.md`.
+
+### Four deviations from the plan above, each deliberate
+
+1. **`docs/security.md` was written in Phase 9, not here.** The plan listed it
+   under Phase 10, but the threat model was the natural output of the
+   security-hardening pass; writing it then and linking it now beats a placeholder.
+2. **The plan's premise about `styles/` was wrong, and was not acted on.** It said
+   `AGENTS.md` and `docs/README.md` "reference the `styles/` directory as though it
+   were never deleted" — but `styles/` **exists** (`globals.css`, imported by
+   `_app.js`), so those references are correct. What was actually stale in
+   `AGENTS.md` was the pre-CMS world it still described: the deleted `data/`
+   directory, `public/assets/` holding the CV (now in Blob), and the dead
+   client-side LeetCode host. Those were fixed instead; the false `styles/` change
+   was not made. `docs/README.md` was already largely current — its real staleness
+   was `next.config.js` (now `.mjs`) and a "the editor is Phase 8" note.
+3. **`.env.example` needed no change.** The plan listed it as a file to write; it
+   already documents every variable the code reads (verified by grepping
+   `process.env.*`), so editing it would have been churn.
+4. **Historical ADRs 0004 and 0006 were left intact.** 0004's reasoning about the
+   type-less package still holds (`tailwind.config.js` and `postcss.config.js` are
+   still CommonJS), and 0006 correctly predicted the Phase 8 editor — which ADR
+   0008 now discharges. Rewriting a phase-stamped record to hide that it was
+   written before a later phase would be the revisionism ADRs exist to avoid.
 
 ---
 

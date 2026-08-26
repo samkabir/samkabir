@@ -1,7 +1,18 @@
 ﻿# Portfolio Website Docs
 
 ## Overview
-This project is a personal portfolio website built with the Next.js pages router and React 18. It uses MUI for layout primitives, Tailwind CSS for utility styling, and AOS for scroll animations.
+This project is a personal portfolio website built with the Next.js pages router and React 18. It uses MUI for layout primitives, Tailwind CSS for utility styling, and AOS for scroll animations. It was a static site until Phase 7 and is now a database-backed CMS with a private dashboard at `/admin`.
+
+## Guides
+
+- [../CLAUDE.md](../CLAUDE.md) — orientation and the invariants that must not be changed casually
+- [setup.md](setup.md) — from a clean clone to a running dev server
+- [architecture.md](architecture.md) — auth, the API layer, data and component conventions
+- [content-management.md](content-management.md) — plain-language "how do I edit X" for the owner
+- [deployment.md](deployment.md) — shipping to Vercel and verifying it
+- [security.md](security.md) — the threat model and every control
+- [api.md](api.md) — the endpoint reference
+- [adr/](adr/README.md) — one record per architectural decision
 
 ## Structure
 - pages/: Route entry points. The home page is pages/index.js.
@@ -58,7 +69,7 @@ What is left in `public/` is only what is not content:
 
 The sixteen project screenshots and the CV moved to Blob in Phase 7 and were
 deleted from the repository. Project covers are served through `next/image` from
-`*.public.blob.vercel-storage.com`, which `next.config.js` allowlists — the
+`*.public.blob.vercel-storage.com`, which `next.config.mjs` allowlists — the
 optimiser refuses a host it has not been told about, so adding a storage provider
 means adding it there.
 
@@ -92,7 +103,7 @@ Ten screens under `/admin`, listed in `lib/adminNav.js`:
 | `/admin/skills` | Skills, in the order they are displayed |
 | `/admin/links` | Social links, and where each one appears |
 | `/admin/resume` | Versioned CV uploads and which one `/cv` serves |
-| `/admin/blogs` | Posts (list, publish, delete) and tags. The editor is Phase 8 |
+| `/admin/blogs` | Posts and tags; the Markdown editor is at `/admin/blogs/new` and `/admin/blogs/[id]` |
 | `/admin/settings` | SEO defaults and section headings |
 | `/admin/account` | Password, linked sign-in methods, recent sign-ins |
 
