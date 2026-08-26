@@ -4,8 +4,9 @@ Turning this static portfolio into a database-backed site with a private admin
 dashboard, so content is managed through a UI instead of by editing
 `data/*.js` and redeploying.
 
-**Status:** Phases 1–10 complete. Phase 11 (deployment) next — it needs the owner's
-production accounts, so it is the one phase that cannot be finished unattended.
+**Status:** Phases 1–10 complete. Phase 11 (deployment) is in progress — its guide,
+docs and automated verification are prepared and it is now blocked on the owner's
+production accounts, the one thing it cannot be finished without.
 
 The public site now renders from the database. The homepage went from 2,686
 bytes of spinner to 85,004 bytes of real HTML, `data/` and the local assets are
@@ -1305,7 +1306,7 @@ otherwise have to rediscover, including decisions not visible in the code.
 
 ---
 
-## Phase 11 — Deployment and verification
+## Phase 11 — Deployment and verification ⏳ IN PROGRESS — blocked on the owner
 
 **Objective.** Ship it, then verify the whole flow against production rather
 than assuming it carried over.
@@ -1325,6 +1326,28 @@ than assuming it carried over.
   skimmed.
 - **Result:** a live portfolio managed entirely from a dashboard, and a
   repository that no longer needs editing to change its own content.
+
+### Prepared — pending the owner's production accounts
+
+Everything that does not need the owner's credentials is done; the deploy itself
+cannot be, because it needs their Neon / Google / Vercel production accounts.
+
+- **`Todo/05-deploy-to-production.md`** — the owner-facing, plain-language
+  walkthrough (create the prod database, Vercel project, env vars, OAuth redirect),
+  and `Todo/README.md` now lists it as the one outstanding task.
+- **`docs/deployment.md`** (written in Phase 10) — the technical reference and the
+  full verification checklist.
+- **`scripts/verify-deploy.mjs`** (`npm run verify:deploy <url>`) — automates the
+  mechanical half of the checklist: home is real HTML not a shell, the security
+  headers are present, the dashboard is `noindex`, `/api/admin/*` returns 401 while
+  signed out, an unknown/draft post is a plain 404, and the sitemap, `robots.txt`
+  and `/cv` resolve. This is the "pre-flight checklist that gets executed, not
+  skimmed" the risk note calls for. Exercised end-to-end already; it runs against
+  the live origin once one exists.
+
+**What remains (owner):** work through `Todo/05`. As each piece comes up, the
+migration, seed, `assets:import` and `admin:create` are run against production, and
+then `verify:deploy` plus the manual sign-in / save / upload checks close it out.
 
 ---
 

@@ -15,16 +15,18 @@ left.
 | ~~02~~ | ~~Set up Google sign-in~~ | ~~Phase 4~~ | **done** |
 | ~~03~~ | ~~Create the file store~~ | ~~Phase 5~~ | **done** |
 | ~~04~~ | ~~Create a public Blob store~~ | ~~Phase 5~~ | **done** |
+| **05** | **[Deploy to production](05-deploy-to-production.md)** | **Phase 11** | **← you are here** |
 
 Task 04 was not in the original plan. Vercel changed its default so new Blob
 stores are private, which only surfaced when the first real upload failed — task
 03 was done correctly. Because the access mode is fixed at creation, the store
 had to be recreated rather than reconfigured.
 
-**Nothing is outstanding.** Every task in this folder is done, and the folder
-stays only for the production deployment task, which gets written when we reach
-Phase 11 — it depends on choices not yet made, so writing it now would only go
-stale.
+**One task is outstanding: [05 — deploy to production](05-deploy-to-production.md).**
+Everything the code needs is built and documented (Phases 1–10); what remains is
+the part only you can do — creating the production database, project and
+environment on your own accounts. Work through task 05 and tell me as each piece
+is ready.
 
 ---
 
