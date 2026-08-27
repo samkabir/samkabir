@@ -197,6 +197,14 @@ function Overview({ adminUser, counts, drafts, activeResume, recent, todo, lastR
  */
 export default adminScreen(Overview);
 
+/**
+ * Headroom for a cold start. This page runs a session check plus a 22-query
+ * transaction; against a suspended Neon free-tier database the first hit can
+ * exceed Vercel's 10s default while the database wakes. 30s covers the cold
+ * path and is irrelevant once warm (sub-second).
+ */
+export const config = { maxDuration: 30 };
+
 export const getServerSideProps = withAdminPage(async () => {
   const { prisma } = await import('@/lib/prisma');
 
