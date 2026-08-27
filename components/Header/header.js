@@ -1,9 +1,31 @@
 import { Box } from '@mui/material';
+import Image from 'next/image';
+import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import AOS from 'aos';
 import 'aos/dist/aos.css';
 
-const Header = () => {
+/**
+ * The nav, built from `SectionCopy` rows rather than four hardcoded `<li>`s.
+ *
+ * The numbering and labels used to live in two places at once — here and in each
+ * section component — so renumbering meant editing both files and hoping they
+ * agreed. `lib/content.js` derives this list from the same rows the sections read,
+ * and drops any row without an anchor so a half-filled dashboard form cannot
+ * produce a link to nowhere.
+ *
+ * Each entry carries a full `href`, which is what lets one list hold both kinds
+ * of destination: `#about` scrolls this page, `/blog` leaves it. Routes go
+ * through `next/link` so navigation stays client-side; anchors stay plain `<a>`,
+ * because `Link` on a same-page fragment adds a history entry and a scroll
+ * behaviour nobody asked for. Blog appears only when a post is published — see
+ * `navFromSections`.
+ *
+ * `sections` defaults to `[]` rather than to the old hardcoded list: an empty nav
+ * on an unseeded database is obviously empty, whereas a fallback list would look
+ * correct while linking to sections that are not there.
+ */
+const Header = ({ sections = [] }) => {
     const [navbar, setNavbar] = useState(false);
     useEffect(() => {
         AOS.init();
@@ -14,11 +36,21 @@ const Header = () => {
             <div className="justify-between px-4 mx-auto lg:max-w-7xl md:items-center md:flex md:px-8">
                 <div>
                     <div className="flex items-center justify-between py-3 md:py-5 md:block">
-                        <a href="/">
+                        <Link href="/">
                             <Box>
-                                <img src='/images/Logo.png' alt='Logo' className='' width="50px" />
+                                {/* Intrinsic size 342×262, rendered at 50px wide. Passing both
+                                    lets the browser reserve the right box before the file
+                                    arrives, which is what the plain <img> could not do. */}
+                                <Image
+                                    src="/images/Logo.png"
+                                    alt="Logo"
+                                    width={342}
+                                    height={262}
+                                    priority
+                                    style={{ width: '50px', height: 'auto' }}
+                                />
                             </Box>
-                        </a>
+                        </Link>
                         <div className="md:hidden">
                             <button
                                 className="p-2 text-gray-700 rounded-md outline-none focus:border-gray-400 focus:border"
@@ -63,21 +95,25 @@ const Header = () => {
                             }`}
                     >
                         <ul className="items-center justify-center space-y-8 md:flex md:space-x-6 md:space-y-0 font-semibold">
-                            <li className="text-gray-600 hover:text-[#7a61ff] my-2">
-                                <a href="#about"><span className='text-[#7a61ff]'>00.</span> About</a>
-                            </li>
-                            {/* <li className="text-gray-600 hover:text-blue-600">
-                            <a href="javascript:void(0)">Blog</a>
-                        </li> */}
-                            <li className="text-gray-600 hover:text-[#7a61ff] my-2">
-                                <a href="#exp"><span className='text-[#7a61ff]'>01.</span> Experience</a>
-                            </li>
-                            <li className="text-gray-600 hover:text-[#7a61ff] my-2">
-                                <a href="#project"><span className='text-[#7a61ff]'>10.</span> Work</a>
-                            </li>
-                            <li className="text-gray-600 hover:text-[#7a61ff] my-2">
-                                <a href="#contact"><span className='text-[#7a61ff]'>11.</span> Contact</a>
-                            </li>
+                            {sections.map((section) => {
+                                const label = section.numberLabel ? (
+                                    <>
+                                        <span className='text-[#7a61ff]'>{section.numberLabel}</span> {section.label}
+                                    </>
+                                ) : (
+                                    section.label
+                                );
+
+                                return (
+                                    <li key={section.key} className="text-gray-600 hover:text-[#7a61ff] my-2">
+                                        {section.href.startsWith('#') ? (
+                                            <a href={section.href}>{label}</a>
+                                        ) : (
+                                            <Link href={section.href}>{label}</Link>
+                                        )}
+                                    </li>
+                                );
+                            })}
                         </ul>
                     </div>
                 </div>

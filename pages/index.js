@@ -8,48 +8,106 @@ import Contact from '@/components/Contact/Contact'
 import MainComponent from '@/components/Home/MainComponent'
 import { Box } from '@mui/material'
 import Footer from '@/components/Footer/Footer'
-import { useEffect, useState } from 'react'
-import Loading from '@/components/Loading/Loading'
 import ContractualExperiences from '@/components/ContractualExperiences/ContractualExperiences'
+import { getPageContent } from '@/lib/content'
 
-export default function Home() {
-  // For Animation
-  // https://github.com/michalsnik/aos#animations
+/**
+ * The home page, now static HTML generated from the database.
+ *
+ * Two things changed here in Phase 7, and the second matters more than the CMS
+ * does.
+ *
+ * **The loading gate is gone.** This page used to render `<Loading />` on the
+ * first paint and swap in the real content from an empty `useEffect`, which meant
+ * the server-rendered HTML was 2,686 bytes of spinner — a whole portfolio that no
+ * crawler could see, and a visitor on a slow connection watching a logo before
+ * anything arrived. There was nothing to gain from it: the data was in the bundle
+ * the entire time. Deleting it is as much the point of this phase as the
+ * dashboard is. The `Loading` component itself stays, for anywhere a real wait
+ * needs covering.
+ *
+ * **`getStaticProps` with `revalidate`.** The page is HTML at the edge, and a save
+ * in the dashboard reaches it within the window without a redeploy. Step 6
+ * shortens that to immediate with on-demand revalidation; the timer stays as the
+ * backstop for a revalidation call that never lands.
+ */
+export default function Home({ content }) {
+  const {
+    profile,
+    seo,
+    sections = {},
+    nav = [],
+    skills = [],
+    education = [],
+    experiences = [],
+    contractualExperiences = [],
+    projects = [],
+    socialLinks = { sidebar: [], contact: [] },
+    hasResume = false,
+  } = content ?? {};
 
-  const [loading, setLoading] = useState(true);
+  const title = seo?.siteTitle || 'Samiul Kabir';
+  const description = seo?.defaultDescription || 'Portfolio Website of Samiul Kabir';
 
-  useEffect(() => {
-    setLoading(false);
-  }, []);
   return (
     <>
       <Head>
-        <title>Samiul Kabir</title>
-        <meta name="description" content="Portfolio Website of Samiul Kabir" />
+        <title>{title}</title>
+        <meta name="description" content={description} />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link rel="icon" href="/images/Logo.png" />
+        {seo?.canonicalUrl ? <link rel="canonical" href={seo.canonicalUrl} /> : null}
       </Head>
 
-      {
-        loading ?
-          <Loading />
-          :
-          <main>
-            <Header />
-            <SocialMediaLinks />
-            <Box className='px-4 md:px-20 py-8 cursor-default'>
-              <MainComponent />
-              <Box className='px-4 md:px-20'>
-                <AboutMe />
-                <Experience />
-                <ContractualExperiences />
-                <DemoProjects />
-                <Contact />
-              </Box>
-            </Box>
-            <Footer />
-          </main>
-      }
+      <main>
+        <Header sections={nav} />
+        <SocialMediaLinks links={socialLinks.sidebar} email={profile?.publicEmail} />
+        <Box className='px-4 md:px-20 py-8 cursor-default'>
+          <MainComponent profile={profile} hasResume={hasResume} />
+          <Box className='px-4 md:px-20'>
+            <AboutMe
+              profile={profile}
+              skills={skills}
+              education={education}
+              sections={sections}
+            />
+            <Experience experiences={experiences} section={sections.experience} />
+            <ContractualExperiences
+              experiences={contractualExperiences}
+              section={sections.contractual}
+            />
+            <DemoProjects projects={projects} section={sections.projects} />
+            <Contact
+              links={socialLinks.contact}
+              profile={profile}
+              section={sections.contact}
+            />
+          </Box>
+        </Box>
+        <Footer profile={profile} />
+      </main>
     </>
   )
+}
+
+/**
+ * Reads the whole page from the database at build time, then again on a timer.
+ *
+ * Deliberately **not** wrapped in a try/catch. A build that cannot reach the
+ * database should fail loudly: the alternative is deploying a portfolio that
+ * renders empty, which looks like a design bug rather than a missing
+ * `DATABASE_URL` and would be discovered by a visitor instead of by CI. Neon
+ * suspends an idle database, so the first query in a cold build pays a wake-up
+ * cost — a slow first query here is normal and not a failure.
+ *
+ * An *empty* database is a different case and is survivable: the queries succeed
+ * and return nothing, and each section falls back to what it renders today.
+ */
+export async function getStaticProps() {
+  const content = await getPageContent();
+
+  return {
+    props: { content },
+    revalidate: 60,
+  };
 }

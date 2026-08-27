@@ -3,7 +3,6 @@ import { useEffect, useState } from 'react';
 import PropTypes from 'prop-types';
 import Tabs from '@mui/material/Tabs';
 import Tab from '@mui/material/Tab';
-import { experience } from '../../data/experience';
 import ArrowRightIcon from '@mui/icons-material/ArrowRight';
 import AOS from 'aos';
 import 'aos/dist/aos.css';
@@ -41,7 +40,18 @@ function a11yProps(index) {
     };
 }
 
-const Experience = () => {
+/**
+ * Permanent roles, from the database.
+ *
+ * `timeline` arrives as the finished string rather than as dates: `lib/content.js`
+ * formats it with the same `formatTimeline` the dashboard uses, so the two cannot
+ * disagree and no `Date` has to survive `getStaticProps`.
+ *
+ * The field names are the schema's — `jobPosition`, `companyName` — where the old
+ * static file used `job_position` and `company_name`. That rename happens in the
+ * read layer, so this component has one vocabulary instead of two.
+ */
+const Experience = ({ experiences = [], section }) => {
     const [value, setValue] = useState(0);
 
     useEffect(() => {
@@ -52,10 +62,10 @@ const Experience = () => {
         setValue(newValue);
     };
     return (
-        <Box className='py-10 md:h-[500px]' id='exp' data-aos="fade-down" data-aos-easing="ease-in-out" data-aos-duration="1000" data-aos-delay="50" data-aos-once="true">
+        <Box className='py-10 md:h-[500px]' id={section?.anchor || 'exp'} data-aos="fade-down" data-aos-easing="ease-in-out" data-aos-duration="1000" data-aos-delay="50" data-aos-once="true">
             <Box>
                 <Typography variant='h4' className='font-semibold text-[#d2d2d2]'>
-                    <span className='text-[#7a61ff]'>01. </span> Job Experiences
+                    <span className='text-[#7a61ff]'>{section?.numberLabel || '01.'} </span> {section?.heading || 'Job Experiences'}
                 </Typography>
             </Box>
             <Box className='mt-4'>
@@ -77,8 +87,8 @@ const Experience = () => {
                             className='hidden md:block'
                         >
                             {
-                                experience && experience.map((e, i) => (
-                                    <Tab label={e.job_position} key={i} className='text-white w-[180px] normal-case font-[600]' {...a11yProps(i)} />
+                                experiences.map((e, i) => (
+                                    <Tab label={e.jobPosition} key={e.id} className='text-white w-[180px] normal-case font-[600]' {...a11yProps(i)} />
                                 ))
                             }
                         </Tabs>
@@ -94,20 +104,20 @@ const Experience = () => {
                             aria-label="scrollable force tabs example"
                         >
                             {
-                                experience && experience.map((e, i) => (
-                                    <Tab label={e.job_position} key={i} className='text-white w-[180px] normal-case font-[600]' />
+                                experiences.map((e, i) => (
+                                    <Tab label={e.jobPosition} key={e.id} className='text-white w-[180px] normal-case font-[600]' />
                                 ))
                             }
                         </Tabs>
                     </Box>
 
                     {
-                        experience && experience.map((e, i) => (
-                            <TabPanel value={value} index={i} key={i} className='md:w-[800px]' >
+                        experiences.map((e, i) => (
+                            <TabPanel value={value} index={i} key={e.id} className='md:w-[800px]' >
                                 <Box>
                                     <Box>
                                         <Typography variant='subtitle1' className='text-white font-[600]'>
-                                            {e.company_name}
+                                            {e.companyName}
                                         </Typography>
                                     </Box>
                                     <Box className='pb-2'>
