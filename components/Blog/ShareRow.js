@@ -1,9 +1,6 @@
-import { Box, Typography } from '@mui/material';
 import LinkedInIcon from '@mui/icons-material/LinkedIn';
 import LinkIcon from '@mui/icons-material/Link';
 import { useState } from 'react';
-
-import { rubikFont } from '../../lib/fonts';
 
 /**
  * Share links for a post.
@@ -34,13 +31,13 @@ export default function ShareRow({ url, title }) {
       label: 'Share on X',
       href: `https://x.com/intent/post?url=${encodedUrl}&text=${encodedTitle}`,
       // MUI 5.11 has no X icon; the glyph is close enough and needs no dependency.
-      glyph: <span className="font-semibold text-xl leading-none">𝕏</span>,
+      glyph: <span className="font-semibold text-[17px] leading-none">𝕏</span>,
     },
     {
       key: 'linkedin',
       label: 'Share on LinkedIn',
       href: `https://www.linkedin.com/sharing/share-offsite/?url=${encodedUrl}`,
-      glyph: <LinkedInIcon className="text-2xl" />,
+      glyph: <LinkedInIcon style={{ fontSize: 18 }} />,
     },
   ];
 
@@ -53,11 +50,12 @@ export default function ShareRow({ url, title }) {
     }
   }
 
+  const button =
+    'grid place-items-center w-9 h-9 rounded-full border border-ss-line text-ss-muted hover:text-ss-fg hover:border-ss-faint transition-colors';
+
   return (
-    <Box className={`flex flex-wrap items-center gap-4 ${rubikFont.className}`}>
-      <Typography variant="caption" className="text-[#d2d2d2] opacity-70">
-        Share
-      </Typography>
+    <div className="flex flex-wrap items-center gap-2">
+      <span className="ss-mono text-ss-faint mr-2">Share</span>
 
       {targets.map((target) => (
         <a
@@ -67,7 +65,7 @@ export default function ShareRow({ url, title }) {
           rel="noopener noreferrer"
           aria-label={target.label}
           title={target.label}
-          className="text-[#d6d6d6] hover:text-[#7a61ff] transform transition duration-500"
+          className={button}
         >
           {target.glyph}
         </a>
@@ -78,15 +76,15 @@ export default function ShareRow({ url, title }) {
         onClick={copy}
         aria-label="Copy this post's link"
         title="Copy this post's link"
-        className="text-[#d6d6d6] hover:text-[#7a61ff] transform transition duration-500"
+        className={button}
       >
-        <LinkIcon className="text-2xl" />
+        <LinkIcon style={{ fontSize: 18 }} />
       </button>
 
       {/* `aria-live` so the outcome is announced, not only shown. */}
-      <Typography variant="caption" className="text-[#64ffda]" aria-live="polite">
+      <span className="ml-2 text-[13px] text-ss-accent" aria-live="polite">
         {copied === true ? 'Copied' : copied === false ? 'Copying was blocked — select the URL instead' : ''}
-      </Typography>
-    </Box>
+      </span>
+    </div>
   );
 }

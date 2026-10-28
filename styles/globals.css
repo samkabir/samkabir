@@ -157,3 +157,518 @@ a {
     color-scheme: dark;
   }
 }
+/* ==========================================================================
+   Public site (components/site)
+   Quiet and editorial: warm paper / soft ink, one sage accent, hairlines, and
+   motion kept to soft blur-in entrances and small hover shifts. Everything is
+   scoped under `.ss`, and the theme flips on `data-theme` (set pre-paint in
+   _document.js), so the admin is untouched.
+   ========================================================================== */
+
+.ss {
+  --ss-bg: #fbfbf9;
+  --ss-elev: #ffffff;
+  --ss-subtle: #f2f2ee;
+  --ss-fg: #18181a;
+  --ss-muted: #67676c;
+  --ss-faint: #a1a1a6;
+  --ss-line: #e7e6e1;
+  --ss-accent: #2f6b57;
+  --ss-accent-soft: #e5efe9;
+  --ss-shadow: 0 1px 2px rgba(24, 24, 26, 0.04), 0 8px 24px -12px rgba(24, 24, 26, 0.12);
+  --ss-shadow-lg: 0 2px 4px rgba(24, 24, 26, 0.04), 0 24px 48px -20px rgba(24, 24, 26, 0.22);
+  --ss-ease: cubic-bezier(0.22, 1, 0.36, 1);
+
+  /* Read by components/Blog/BlogPostBody.js; the admin preview, which sits
+     outside `.ss`, falls back to the colours that component always had. */
+  --md-text: #34343a;
+  --md-strong: var(--ss-fg);
+  --md-heading: var(--ss-fg);
+  --md-link: var(--ss-accent);
+  --md-link-hover: var(--ss-fg);
+  --md-rule: var(--ss-line);
+  --md-accent: var(--ss-accent);
+  --md-code-bg: var(--ss-subtle);
+  --md-code-text: #7a3e2d;
+  --md-pre-bg: #f6f6f3;
+
+  min-height: 100vh;
+  background: var(--ss-bg);
+  color: var(--ss-fg);
+  font-family: var(--font-geist), ui-sans-serif, system-ui, sans-serif;
+  font-size: 15px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-feature-settings: 'ss01', 'cv11';
+}
+
+[data-theme='dark'] .ss {
+  --ss-bg: #0d0d0e;
+  --ss-elev: #151517;
+  --ss-subtle: #1b1b1e;
+  --ss-fg: #ececed;
+  --ss-muted: #9d9da3;
+  --ss-faint: #64646a;
+  --ss-line: #26262a;
+  --ss-accent: #86c9ad;
+  --ss-accent-soft: #17251f;
+  --ss-shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 8px 24px -12px rgba(0, 0, 0, 0.6);
+  --ss-shadow-lg: 0 2px 4px rgba(0, 0, 0, 0.3), 0 24px 48px -20px rgba(0, 0, 0, 0.8);
+  --md-text: #c9c9ce;
+  --md-code-text: #e8b89f;
+  --md-pre-bg: #131315;
+}
+
+html:has(.ss) {
+  background: #fbfbf9;
+  color-scheme: light;
+  scroll-behavior: smooth;
+  scroll-padding-top: 96px;
+}
+
+html[data-theme='dark']:has(.ss) {
+  background: #0d0d0e;
+  color-scheme: dark;
+}
+
+.ss ::selection {
+  background: var(--ss-accent-soft);
+  color: var(--ss-fg);
+}
+
+.ss :focus-visible {
+  outline: 2px solid var(--ss-accent);
+  outline-offset: 3px;
+  border-radius: 6px;
+}
+
+.ss-serif {
+  font-family: var(--font-newsreader), Georgia, serif;
+  font-weight: 400;
+  letter-spacing: -0.015em;
+}
+
+.ss-mono {
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-size: 12px;
+  letter-spacing: 0.01em;
+}
+
+/* The white monogram, inverted to ink on the light theme. */
+[data-theme='light'] .ss .ss-logo {
+  filter: invert(1);
+}
+
+/* A faint dot grid behind the hero, fading out downwards. */
+.ss-dots {
+  background-image: radial-gradient(var(--ss-line) 1px, transparent 1px);
+  background-size: 22px 22px;
+  mask-image: radial-gradient(ellipse 70% 60% at 50% 0%, #000 20%, transparent 70%);
+  -webkit-mask-image: radial-gradient(ellipse 70% 60% at 50% 0%, #000 20%, transparent 70%);
+}
+
+/* ---------- Entrances ---------- */
+
+/* On load: each `.ss-in` settles out of a light blur, staggered by --d. */
+.ss-in {
+  animation: ss-in 0.9s var(--ss-ease) both;
+  animation-delay: var(--d, 0ms);
+}
+
+@keyframes ss-in {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 10px, 0);
+    filter: blur(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+    filter: none;
+  }
+}
+
+/* On scroll: the same settle, triggered by components/site/Reveal. */
+.js .ss-reveal {
+  opacity: 0;
+  transform: translate3d(0, 14px, 0);
+  filter: blur(6px);
+  transition:
+    opacity 0.9s var(--ss-ease),
+    transform 0.9s var(--ss-ease),
+    filter 0.9s var(--ss-ease);
+  transition-delay: var(--d, 0ms);
+}
+
+.js .ss-reveal.is-in {
+  opacity: 1;
+  transform: none;
+  filter: none;
+}
+
+/* ---------- Links and buttons ---------- */
+
+/* An underline that draws in from the left. */
+.ss-link {
+  background-image: linear-gradient(currentColor, currentColor);
+  background-size: 0% 1px;
+  background-position: 0 100%;
+  background-repeat: no-repeat;
+  transition:
+    background-size 0.4s var(--ss-ease),
+    color 0.2s;
+}
+
+.ss-link:hover {
+  background-size: 100% 1px;
+}
+
+.ss-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  height: 2.5rem;
+  padding: 0 1rem;
+  border-radius: 9999px;
+  font-size: 14px;
+  font-weight: 500;
+  white-space: nowrap;
+  transition:
+    background-color 0.2s,
+    border-color 0.2s,
+    color 0.2s,
+    transform 0.2s var(--ss-ease),
+    box-shadow 0.2s;
+}
+
+.ss-btn:active {
+  transform: scale(0.97);
+}
+
+.ss-btn--solid {
+  background: var(--ss-fg);
+  color: var(--ss-bg);
+}
+
+.ss-btn--solid:hover {
+  box-shadow: 0 6px 20px -8px var(--ss-fg);
+}
+
+.ss-btn--ghost {
+  border: 1px solid var(--ss-line);
+  background: var(--ss-elev);
+  color: var(--ss-fg);
+}
+
+.ss-btn--ghost:hover {
+  border-color: var(--ss-faint);
+}
+
+.ss-btn .ss-arrow {
+  transition: transform 0.3s var(--ss-ease);
+}
+
+.ss-btn:hover .ss-arrow,
+.group:hover .ss-arrow {
+  transform: translateX(3px);
+}
+
+.ss-btn:hover .ss-arrow-ne,
+.group:hover .ss-arrow-ne {
+  transform: translate(2px, -2px);
+}
+
+.ss-arrow-ne {
+  transition: transform 0.3s var(--ss-ease);
+}
+
+.ss-kbd {
+  display: inline-grid;
+  place-items: center;
+  min-width: 1.35rem;
+  height: 1.35rem;
+  padding: 0 0.3rem;
+  border-radius: 0.35rem;
+  border: 1px solid var(--ss-line);
+  background: var(--ss-subtle);
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-size: 11px;
+  color: var(--ss-muted);
+}
+
+/* ---------- Surfaces ---------- */
+
+.ss-card {
+  border: 1px solid var(--ss-line);
+  background: var(--ss-elev);
+  border-radius: 1rem;
+  transition:
+    border-color 0.3s,
+    box-shadow 0.4s var(--ss-ease),
+    transform 0.4s var(--ss-ease);
+}
+
+a.ss-card:hover,
+.ss-card--hover:hover {
+  border-color: var(--ss-faint);
+  box-shadow: var(--ss-shadow-lg);
+  transform: translateY(-2px);
+}
+
+/* The screenshot frame on project cards: the image sits inset on a tinted
+   panel and rises slightly on hover. */
+.ss-shot {
+  position: relative;
+  overflow: hidden;
+  background: var(--ss-subtle);
+  border-bottom: 1px solid var(--ss-line);
+}
+
+.ss-shot__img {
+  position: absolute;
+  left: 8%;
+  right: 8%;
+  top: 10%;
+  bottom: -2%;
+  overflow: hidden;
+  border-radius: 0.6rem 0.6rem 0 0;
+  box-shadow: var(--ss-shadow-lg);
+  transition: transform 0.6s var(--ss-ease);
+}
+
+.group:hover .ss-shot__img {
+  transform: translateY(-6px);
+}
+
+.ss-chip {
+  display: inline-flex;
+  align-items: center;
+  height: 1.6rem;
+  padding: 0 0.6rem;
+  border-radius: 9999px;
+  border: 1px solid var(--ss-line);
+  background: var(--ss-elev);
+  font-size: 12.5px;
+  color: var(--ss-muted);
+  transition:
+    color 0.2s,
+    border-color 0.2s,
+    background-color 0.2s;
+}
+
+button.ss-chip:hover,
+a.ss-chip:hover {
+  color: var(--ss-fg);
+  border-color: var(--ss-faint);
+}
+
+.ss-chip[aria-pressed='true'],
+.ss-chip[data-active='true'] {
+  background: var(--ss-fg);
+  border-color: var(--ss-fg);
+  color: var(--ss-bg);
+}
+
+.ss-row {
+  transition: background-color 0.2s;
+}
+
+.ss-row:hover {
+  background: var(--ss-subtle);
+}
+
+/* "Currently at …" — a live dot. */
+.ss-pulse {
+  position: relative;
+  display: inline-block;
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 9999px;
+  background: var(--ss-accent);
+}
+
+.ss-pulse::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: inherit;
+  animation: ss-pulse 2.2s var(--ss-ease) infinite;
+}
+
+@keyframes ss-pulse {
+  from { transform: scale(1); opacity: 0.6; }
+  to { transform: scale(3); opacity: 0; }
+}
+
+/* ---------- Nav ---------- */
+
+.ss-nav {
+  transition:
+    background-color 0.3s,
+    border-color 0.3s,
+    backdrop-filter 0.3s;
+  border-bottom: 1px solid transparent;
+}
+
+.ss-nav[data-scrolled='true'] {
+  background: color-mix(in srgb, var(--ss-bg) 90%, transparent);
+  border-bottom-color: var(--ss-line);
+  backdrop-filter: blur(14px) saturate(160%);
+  -webkit-backdrop-filter: blur(14px) saturate(160%);
+}
+
+.ss-navlink {
+  position: relative;
+  padding: 0.35rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 14px;
+  color: var(--ss-muted);
+  transition:
+    color 0.2s,
+    background-color 0.2s;
+}
+
+.ss-navlink:hover {
+  color: var(--ss-fg);
+}
+
+.ss-navlink[aria-current='page'] {
+  color: var(--ss-fg);
+  background: var(--ss-subtle);
+}
+
+/* ---------- Command palette ---------- */
+
+.ss-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 12vh 1rem 1rem;
+  background: rgba(10, 10, 12, 0.35);
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+  animation: ss-fade 0.2s ease-out both;
+}
+
+@keyframes ss-fade {
+  from { opacity: 0; }
+}
+
+.ss-palette {
+  width: 100%;
+  max-width: 560px;
+  overflow: hidden;
+  border-radius: 1rem;
+  border: 1px solid var(--ss-line);
+  background: var(--ss-elev);
+  box-shadow: var(--ss-shadow-lg), 0 40px 80px -30px rgba(0, 0, 0, 0.45);
+  animation: ss-pop 0.28s var(--ss-ease) both;
+}
+
+@keyframes ss-pop {
+  from {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.98);
+  }
+}
+
+.ss-option {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  padding: 0.55rem 0.75rem;
+  border-radius: 0.6rem;
+  text-align: left;
+  font-size: 14px;
+  color: var(--ss-fg);
+  cursor: pointer;
+}
+
+.ss-option[aria-selected='true'] {
+  background: var(--ss-subtle);
+}
+
+/* ---------- Toast ---------- */
+
+.ss-toast {
+  position: fixed;
+  left: 50%;
+  bottom: 1.5rem;
+  z-index: 90;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 1rem;
+  border-radius: 9999px;
+  background: var(--ss-fg);
+  color: var(--ss-bg);
+  font-size: 14px;
+  font-weight: 500;
+  box-shadow: var(--ss-shadow-lg);
+  transform: translate(-50%, 150%);
+  transition: transform 0.45s var(--ss-ease);
+  pointer-events: none;
+}
+
+.ss-toast[data-show='true'] {
+  transform: translate(-50%, 0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html:has(.ss) {
+    scroll-behavior: auto;
+  }
+
+  .ss *,
+  .ss *::before,
+  .ss *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  .js .ss-reveal {
+    opacity: 1;
+    transform: none;
+    filter: none;
+  }
+}
+
+/* The slow, faded strip of skills on the home page. Two copies of the list run
+   back to back and the track moves by one copy, so the loop has no seam. */
+.ss-marquee {
+  display: flex;
+  overflow: hidden;
+  mask-image: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent);
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent);
+}
+
+.ss-marquee__track {
+  display: flex;
+  flex-shrink: 0;
+  gap: 2.25rem;
+  padding-right: 2.25rem;
+  animation: ss-marquee 60s linear infinite;
+}
+
+.ss-marquee:hover .ss-marquee__track {
+  animation-play-state: paused;
+}
+
+@keyframes ss-marquee {
+  to { transform: translateX(-100%); }
+}
+
+/* Post bodies on the public site take the site's type; the admin preview keeps
+   the component's own font. */
+.ss .md-body {
+  font-family: var(--font-geist), ui-sans-serif, system-ui, sans-serif;
+  font-size: 16.5px;
+  line-height: 1.75;
+}

@@ -1,4 +1,3 @@
-import { Box, Typography } from '@mui/material';
 import Head from 'next/head';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -6,20 +5,16 @@ import Link from 'next/link';
 import BlogPostBody from '@/components/Blog/BlogPostBody';
 import ShareRow from '@/components/Blog/ShareRow';
 import TagPill from '@/components/Blog/TagPill';
-import Footer from '@/components/Footer/Footer';
-import Header from '@/components/Header/header';
+import SiteLayout from '@/components/site/SiteLayout';
+import * as Icon from '@/components/site/icons';
 import { formatDay } from '@/lib/adminFormat';
-import { rubikFont } from '@/lib/fonts';
 import { plainSummary } from '@/lib/markdown';
 import { absoluteUrl, serialiseJsonLd } from '@/lib/seo';
 import {
   getPostBySlug,
   getPostNeighbours,
-  getProfile,
   getPublishedPostSlugs,
-  getSectionCopy,
-  getSeoSettings,
-  navFromSections,
+  getSiteChrome,
 } from '@/lib/content';
 
 /**
@@ -30,7 +25,8 @@ import {
  * the point — a visibility check in a component is a check someone can render
  * around.
  */
-export default function BlogPost({ post, neighbours, seo, profile, nav, canonical }) {
+export default function BlogPost({ post, neighbours, chrome, canonical }) {
+  const { seo, profile } = chrome ?? {};
   const siteTitle = seo?.siteTitle || 'Samiul Kabir';
   const authorName = post.authorName || profile?.fullName || siteTitle;
 
@@ -82,8 +78,6 @@ export default function BlogPost({ post, neighbours, seo, profile, nav, canonica
       <Head>
         <title>{title}</title>
         <meta name="description" content={description} />
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <link rel="icon" href="/images/Logo.png" />
         {canonical ? <link rel="canonical" href={canonical} /> : null}
 
         <meta property="og:type" content="article" />
@@ -108,119 +102,91 @@ export default function BlogPost({ post, neighbours, seo, profile, nav, canonica
         />
       </Head>
 
-      <main>
-        <Header sections={nav} />
+      <SiteLayout chrome={chrome}>
+        <article className="mx-auto max-w-[720px] px-5 sm:px-8 pt-12 sm:pt-20">
+          <Link href="/blog" className="ss-in group inline-flex items-center gap-1.5 text-[14px] text-ss-muted hover:text-ss-fg transition-colors">
+            <Icon.ArrowLeft className="w-4 h-4 transition-transform duration-300 group-hover:-translate-x-0.5" />
+            All writing
+          </Link>
 
-        <Box className="px-4 md:px-20 py-8 cursor-default">
-          <Box className="px-4 md:px-20 max-w-[820px] mx-auto">
-            <Box className="pt-10">
-              <Link href="/blog" className={`text-[#7a61ff] text-sm ${rubikFont.className}`}>
-                ← All writing
-              </Link>
-            </Box>
+          <header className="pt-8 pb-10">
+            <h1 className="ss-in ss-serif text-[38px] sm:text-[52px] leading-[1.06] text-ss-fg" style={{ '--d': '80ms' }}>
+              {post.title}
+            </h1>
 
-            <article>
-              <header className="pt-6 pb-8">
-                <Typography variant="h3" className="font-semibold text-[#d2d2d2] hidden md:block">
-                  {post.title}
-                </Typography>
-                <Typography variant="h4" className="font-semibold text-[#d2d2d2] md:hidden">
-                  {post.title}
-                </Typography>
-
-                <Box className={`flex flex-wrap items-baseline gap-x-4 pt-4 ${rubikFont.className}`}>
-                  {post.publishedAt ? (
-                    <Typography variant="caption" className="text-[#7a61ff]">
-                      {/* A machine-readable date beside the human one, so the
-                          published date is not only in JSON-LD. */}
-                      <time dateTime={post.publishedAt}>{formatDay(post.publishedAt)}</time>
-                    </Typography>
-                  ) : null}
-
-                  <Typography variant="caption" className="text-[#d2d2d2] opacity-70">
-                    {post.readingMinutes} min read
-                  </Typography>
-
-                  <Typography variant="caption" className="text-[#d2d2d2] opacity-70">
-                    {authorName}
-                  </Typography>
-                </Box>
-
-                {post.tags.length ? (
-                  <Box className="flex flex-wrap pt-5">
-                    {post.tags.map((tag) => (
-                      <TagPill
-                        key={tag.slug}
-                        name={tag.name}
-                        href={`/blog?tag=${encodeURIComponent(tag.slug)}`}
-                      />
-                    ))}
-                  </Box>
-                ) : null}
-              </header>
-
-              {post.cover?.url ? (
-                <Box className="pb-10">
-                  <Image
-                    src={post.cover.url}
-                    alt={post.coverAlt || post.cover.alt || ''}
-                    width={post.cover.width ?? 1200}
-                    height={post.cover.height ?? 630}
-                    className="rounded"
-                    sizes="(max-width: 820px) 100vw, 820px"
-                    style={{ width: '100%', height: 'auto' }}
-                    priority
-                  />
-                </Box>
+            <p className="ss-in ss-mono flex flex-wrap items-center gap-x-3 gap-y-1 pt-5 text-ss-faint" style={{ '--d': '160ms' }}>
+              {post.publishedAt ? (
+                /* A machine-readable date beside the human one, so the
+                   published date is not only in JSON-LD. */
+                <time dateTime={post.publishedAt}>{formatDay(post.publishedAt)}</time>
               ) : null}
+              <span aria-hidden="true">·</span>
+              <span>{post.readingMinutes} min read</span>
+              <span aria-hidden="true">·</span>
+              <span>{authorName}</span>
+            </p>
 
-              <BlogPostBody markdown={post.contentMarkdown} />
-            </article>
-
-            <Box className="border-t border-[#d2d2d2]/20 mt-14 pt-8">
-              {canonical ? <ShareRow url={canonical} title={post.title} /> : null}
-            </Box>
-
-            {/* Previous is the next post *older* — the direction a reader moving
-                backwards through an archive expects. */}
-            {neighbours.previous || neighbours.next ? (
-              <Box className="grid md:grid-cols-2 gap-4 mt-10">
-                {neighbours.previous ? (
-                  <Link
-                    href={`/blog/${neighbours.previous.slug}`}
-                    className={`bg-[#233352] rounded p-5 transform transition duration-500 hover:scale-105 ${rubikFont.className}`}
-                  >
-                    <Typography variant="caption" className="text-[#7a61ff]">
-                      ← Previous
-                    </Typography>
-                    <Typography variant="subtitle1" className="text-[#d6d6d6] font-[600]">
-                      {neighbours.previous.title}
-                    </Typography>
-                  </Link>
-                ) : (
-                  <Box />
-                )}
-
-                {neighbours.next ? (
-                  <Link
-                    href={`/blog/${neighbours.next.slug}`}
-                    className={`bg-[#233352] rounded p-5 transform transition duration-500 hover:scale-105 md:text-right ${rubikFont.className}`}
-                  >
-                    <Typography variant="caption" className="text-[#7a61ff]">
-                      Next →
-                    </Typography>
-                    <Typography variant="subtitle1" className="text-[#d6d6d6] font-[600]">
-                      {neighbours.next.title}
-                    </Typography>
-                  </Link>
-                ) : null}
-              </Box>
+            {post.tags.length ? (
+              <div className="ss-in flex flex-wrap gap-1.5 pt-5" style={{ '--d': '220ms' }}>
+                {post.tags.map((tag) => (
+                  <TagPill
+                    key={tag.slug}
+                    name={tag.name}
+                    href={`/blog?tag=${encodeURIComponent(tag.slug)}`}
+                  />
+                ))}
+              </div>
             ) : null}
-          </Box>
-        </Box>
+          </header>
 
-        <Footer profile={profile} />
-      </main>
+          {post.cover?.url ? (
+            <div className="ss-in pb-10" style={{ '--d': '260ms' }}>
+              <Image
+                src={post.cover.url}
+                alt={post.coverAlt || post.cover.alt || ''}
+                width={post.cover.width ?? 1200}
+                height={post.cover.height ?? 630}
+                className="rounded-xl border border-ss-line"
+                sizes="(max-width: 720px) 100vw, 720px"
+                style={{ width: '100%', height: 'auto' }}
+                priority
+              />
+            </div>
+          ) : null}
+
+          <div className="ss-in" style={{ '--d': '300ms' }}>
+            <BlogPostBody markdown={post.contentMarkdown} />
+          </div>
+
+          <div className="border-t border-ss-line mt-14 pt-6">
+            {canonical ? <ShareRow url={canonical} title={post.title} /> : null}
+          </div>
+
+          {/* Previous is the next post *older* — the direction a reader moving
+              backwards through an archive expects. */}
+          {neighbours.previous || neighbours.next ? (
+            <nav aria-label="More posts" className="grid sm:grid-cols-2 gap-3 mt-10">
+              {neighbours.previous ? (
+                <Link href={`/blog/${neighbours.previous.slug}`} className="ss-card group p-5">
+                  <span className="ss-mono text-ss-faint">← Previous</span>
+                  <span className="block mt-1 text-[15px] font-medium text-ss-fg">{neighbours.previous.title}</span>
+                </Link>
+              ) : (
+                <span />
+              )}
+
+              {neighbours.next ? (
+                <Link href={`/blog/${neighbours.next.slug}`} className="ss-card group p-5 sm:text-right">
+                  <span className="ss-mono text-ss-faint">Next →</span>
+                  <span className="block mt-1 text-[15px] font-medium text-ss-fg">{neighbours.next.title}</span>
+                </Link>
+              ) : null}
+            </nav>
+          ) : null}
+        </article>
+
+        <div className="h-8 sm:h-12" />
+      </SiteLayout>
     </>
   );
 }
@@ -266,20 +232,17 @@ export async function getStaticProps({ params }) {
     return { notFound: true, revalidate: 60 };
   }
 
-  const [neighbours, seo, profile, sections] = await Promise.all([
+  const [neighbours, chrome] = await Promise.all([
     getPostNeighbours(post.publishedAt),
-    getSeoSettings(),
-    getProfile(),
-    getSectionCopy(),
+    getSiteChrome(),
   ]);
+  const { seo } = chrome;
 
   return {
     props: {
       post,
       neighbours,
-      seo,
-      profile,
-      nav: navFromSections(sections, { hasPosts: true }),
+      chrome,
       // Built here rather than in the component: `window.location` is not
       // available while prerendering, and a canonical URL that only appears
       // client-side is a canonical URL search engines never see.

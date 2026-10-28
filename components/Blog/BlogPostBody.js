@@ -24,16 +24,16 @@ import { rubikFont } from '../../lib/fonts';
  */
 const components = {
   h2: ({ children }) => (
-    <h2 className="text-2xl md:text-3xl font-semibold text-[#d2d2d2] pt-10 pb-3">{children}</h2>
+    <h2 className="text-2xl md:text-3xl font-semibold text-[color:var(--md-heading,#d2d2d2)] pt-10 pb-3">{children}</h2>
   ),
   h3: ({ children }) => (
-    <h3 className="text-xl md:text-2xl font-semibold text-[#d2d2d2] pt-8 pb-2">{children}</h3>
+    <h3 className="text-xl md:text-2xl font-semibold text-[color:var(--md-heading,#d2d2d2)] pt-8 pb-2">{children}</h3>
   ),
   h4: ({ children }) => (
-    <h4 className="text-lg font-semibold text-[#d2d2d2] pt-6 pb-2">{children}</h4>
+    <h4 className="text-lg font-semibold text-[color:var(--md-heading,#d2d2d2)] pt-6 pb-2">{children}</h4>
   ),
 
-  p: ({ children }) => <p className="text-[#d2d2d2] leading-relaxed pb-4">{children}</p>,
+  p: ({ children }) => <p className="text-[color:var(--md-text,#d2d2d2)] leading-relaxed pb-4">{children}</p>,
 
   a: ({ href, children }) => {
     const external = linkProps(href);
@@ -42,7 +42,7 @@ const components = {
     // `linkProps` returning an empty object is what identifies them.
     if (!external.target) {
       return (
-        <Link href={href ?? '#'} className="text-[#64ffda] underline hover:text-[#7a61ff] transform transition duration-500">
+        <Link href={href ?? '#'} className="text-[color:var(--md-link,#64ffda)] underline underline-offset-2 hover:text-[color:var(--md-link-hover,#7a61ff)] transform transition duration-500">
           {children}
         </Link>
       );
@@ -52,19 +52,19 @@ const components = {
       <a
         href={href}
         {...external}
-        className="text-[#64ffda] underline hover:text-[#7a61ff] transform transition duration-500"
+        className="text-[color:var(--md-link,#64ffda)] underline underline-offset-2 hover:text-[color:var(--md-link-hover,#7a61ff)] transform transition duration-500"
       >
         {children}
       </a>
     );
   },
 
-  ul: ({ children }) => <ul className="list-disc pl-6 pb-4 text-[#d2d2d2]">{children}</ul>,
-  ol: ({ children }) => <ol className="list-decimal pl-6 pb-4 text-[#d2d2d2]">{children}</ol>,
+  ul: ({ children }) => <ul className="list-disc pl-6 pb-4 text-[color:var(--md-text,#d2d2d2)]">{children}</ul>,
+  ol: ({ children }) => <ol className="list-decimal pl-6 pb-4 text-[color:var(--md-text,#d2d2d2)]">{children}</ol>,
   li: ({ children }) => <li className="pb-1">{children}</li>,
 
   blockquote: ({ children }) => (
-    <blockquote className="border-l-4 border-[#7a61ff] pl-4 my-6 text-[#d2d2d2] opacity-90">
+    <blockquote className="border-l-4 border-[color:var(--md-accent,#7a61ff)] pl-4 my-6 text-[color:var(--md-text,#d2d2d2)] opacity-90">
       {children}
     </blockquote>
   ),
@@ -78,7 +78,7 @@ const components = {
    * usually causes on a phone.
    */
   pre: ({ children }) => (
-    <pre className="bg-[#141e30] border border-[#d2d2d2]/20 rounded p-4 my-6 overflow-x-auto text-sm">
+    <pre className="bg-[color:var(--md-pre-bg,#141e30)] border border-[color:var(--md-rule,rgba(210,210,210,0.2))] rounded-lg p-4 my-6 overflow-x-auto text-sm">
       {children}
     </pre>
   ),
@@ -87,17 +87,17 @@ const components = {
     // Inside a `pre`, `pre`'s own styling applies and a second background would
     // double up. Only a standalone span of code gets the chip treatment.
     if (inline === false) {
-      return <code className={`${className ?? ''} font-mono text-[#d2d2d2]`}>{children}</code>;
+      return <code className={`${className ?? ''} font-mono text-[color:var(--md-text,#d2d2d2)]`}>{children}</code>;
     }
 
     return (
-      <code className="font-mono text-sm bg-[#141e30] text-[#64ffda] rounded px-1.5 py-0.5">
+      <code className="font-mono text-sm bg-[color:var(--md-code-bg,#141e30)] text-[color:var(--md-code-text,#64ffda)] rounded px-1.5 py-0.5">
         {children}
       </code>
     );
   },
 
-  hr: () => <hr className="border-[#d2d2d2]/20 my-10" />,
+  hr: () => <hr className="border-[color:var(--md-rule,rgba(210,210,210,0.2))] my-10" />,
 
   /**
    * Tables scroll inside their own container.
@@ -108,15 +108,15 @@ const components = {
    */
   table: ({ children }) => (
     <Box className="overflow-x-auto my-6">
-      <table className="w-full text-left text-[#d2d2d2] text-sm">{children}</table>
+      <table className="w-full text-left text-[color:var(--md-text,#d2d2d2)] text-sm">{children}</table>
     </Box>
   ),
   th: ({ children }) => (
-    <th className="border-b-2 border-[#7a61ff] px-3 py-2 font-semibold">{children}</th>
+    <th className="border-b-2 border-[color:var(--md-accent,#7a61ff)] px-3 py-2 font-semibold">{children}</th>
   ),
-  td: ({ children }) => <td className="border-b border-[#d2d2d2]/15 px-3 py-2">{children}</td>,
+  td: ({ children }) => <td className="border-b border-[color:var(--md-rule,rgba(210,210,210,0.15))] px-3 py-2">{children}</td>,
 
-  strong: ({ children }) => <strong className="font-semibold text-[#fff]">{children}</strong>,
+  strong: ({ children }) => <strong className="font-semibold text-[color:var(--md-strong,#fff)]">{children}</strong>,
   em: ({ children }) => <em className="italic">{children}</em>,
   del: ({ children }) => <del className="opacity-60">{children}</del>,
 
@@ -142,9 +142,15 @@ const components = {
   ),
 };
 
+/**
+ * Colours are CSS variables with the original values as fallbacks: the public
+ * site (`.ss` in globals.css) sets them per theme, and the admin's preview, which
+ * sets none, renders exactly as it always has. Only presentation reads them —
+ * the pipeline, the allowlist and `skipHtml` are unchanged.
+ */
 export default function BlogPostBody({ markdown }) {
   return (
-    <Box className={rubikFont.className}>
+    <Box className={`md-body ${rubikFont.className}`}>
       <ReactMarkdown
         remarkPlugins={remarkPlugins}
         rehypePlugins={rehypePlugins}

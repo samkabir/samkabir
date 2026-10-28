@@ -1,22 +1,13 @@
-import { Box, Typography } from '@mui/material';
 import Head from 'next/head';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 
 import BlogCard from '@/components/Blog/BlogCard';
 import TagPill from '@/components/Blog/TagPill';
-import Footer from '@/components/Footer/Footer';
-import Header from '@/components/Header/header';
-import { rubikFont } from '@/lib/fonts';
+import { PageHeader } from '@/components/site/Section';
+import SiteLayout from '@/components/site/SiteLayout';
 import { absoluteUrl } from '@/lib/seo';
-import {
-  getPostTags,
-  getProfile,
-  getPublishedPosts,
-  getSectionCopy,
-  getSeoSettings,
-  navFromSections,
-} from '@/lib/content';
+import { getPostTags, getPublishedPosts, getSiteChrome } from '@/lib/content';
 
 /**
  * `/blog` — the archive.
@@ -33,7 +24,8 @@ import {
  * content that search engines discount anyway, and the canonical URL below points
  * at `/blog` so they are not competing with it.
  */
-export default function BlogIndex({ posts, tags, seo, profile, nav }) {
+export default function BlogIndex({ posts, tags, chrome }) {
+  const { seo, profile } = chrome ?? {};
   const router = useRouter();
 
   const activeTag = typeof router.query.tag === 'string' ? router.query.tag : null;
@@ -57,8 +49,6 @@ export default function BlogIndex({ posts, tags, seo, profile, nav }) {
       <Head>
         <title>{title}</title>
         <meta name="description" content={description} />
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <link rel="icon" href="/images/Logo.png" />
         {/* Always `/blog`, even on a filtered view: the tag pages are the same
             posts in a different order and should not compete for the same query. */}
         {canonical ? <link rel="canonical" href={canonical} /> : null}
@@ -70,80 +60,59 @@ export default function BlogIndex({ posts, tags, seo, profile, nav }) {
         {seo?.twitterHandle ? <meta name="twitter:site" content={seo.twitterHandle} /> : null}
       </Head>
 
-      <main>
-        <Header sections={nav} />
+      <SiteLayout chrome={chrome}>
+        <PageHeader label="Writing" heading="Notes">
+          <p>Notes on the things I build, and the mistakes that taught me something.</p>
+        </PageHeader>
 
-        <Box className="px-4 md:px-20 py-8 cursor-default">
-          <Box className="px-4 md:px-20">
-            <Box className="py-10">
-              <Typography variant="h4" className="font-semibold text-[#d2d2d2]">
-                <span className="text-[#7a61ff]">100. </span> Writing
-              </Typography>
+        <section className="mx-auto max-w-5xl px-5 sm:px-8" aria-label="Posts">
+          {tags.length ? (
+            <div className="ss-in flex flex-wrap gap-1.5 mb-6" style={{ '--d': '240ms' }}>
+              <TagPill name="All" href="/blog" active={!activeTag} />
+              {tags.map((tag) => (
+                <TagPill
+                  key={tag.slug}
+                  name={tag.name}
+                  count={tag.count}
+                  href={`/blog?tag=${encodeURIComponent(tag.slug)}`}
+                  active={tag.slug === activeTag}
+                />
+              ))}
+            </div>
+          ) : null}
 
-              <Typography variant="subtitle1" className={`text-[#d2d2d2] pt-4 ${rubikFont.className}`}>
-                Notes on the things I build, and the mistakes that taught me
-                something.
-              </Typography>
+          {visible.length ? (
+            <div className="border-b border-ss-line">
+              {visible.map((post) => (
+                <BlogCard key={post.id} post={post} />
+              ))}
+            </div>
+          ) : (
+            /**
+             * Two different empty states, because they mean different things.
+             * "No posts yet" is a site that has not started; "nothing under this
+             * tag" is a filter to clear. Showing the first when the second is
+             * true reads as a broken page.
+             */
+            <div className="py-20 text-center border-t border-ss-line">
+              <p className="text-[17px] text-ss-fg">
+                {activeTag ? `Nothing filed under ${activeTagName} yet.` : 'No posts yet.'}
+              </p>
+              <p className="pt-2 text-ss-muted">
+                {activeTag ? (
+                  <Link href="/blog" className="ss-link text-ss-accent">
+                    Show everything
+                  </Link>
+                ) : (
+                  'Something will land here soon.'
+                )}
+              </p>
+            </div>
+          )}
+        </section>
 
-              {tags.length ? (
-                <Box className="flex flex-wrap items-center pt-8">
-                  <TagPill name="All" href="/blog" active={!activeTag} />
-                  {tags.map((tag) => (
-                    <TagPill
-                      key={tag.slug}
-                      name={tag.name}
-                      count={tag.count}
-                      href={`/blog?tag=${encodeURIComponent(tag.slug)}`}
-                      active={tag.slug === activeTag}
-                    />
-                  ))}
-                </Box>
-              ) : null}
-            </Box>
-
-            {visible.length ? (
-              <Box className="md:grid md:grid-cols-3 gap-4 items-stretch">
-                {visible.map((post) => (
-                  <BlogCard key={post.id} post={post} />
-                ))}
-              </Box>
-            ) : (
-              /**
-               * Two different empty states, because they mean different things.
-               * "No posts yet" is a site that has not started; "nothing under this
-               * tag" is a filter to clear. Showing the first when the second is
-               * true reads as a broken page.
-               */
-              <Box className="py-16 text-center">
-                <Typography variant="h6" className={`text-[#d2d2d2] ${rubikFont.className}`}>
-                  {activeTag ? `Nothing filed under ${activeTagName} yet.` : 'No posts yet.'}
-                </Typography>
-
-                <Typography variant="subtitle2" className={`text-[#d2d2d2] opacity-70 pt-2 ${rubikFont.className}`}>
-                  {activeTag ? (
-                    <Link href="/blog" className="text-[#64ffda] underline">
-                      Show everything
-                    </Link>
-                  ) : (
-                    'Something will land here soon.'
-                  )}
-                </Typography>
-              </Box>
-            )}
-
-            <Box className="flex justify-center mt-14">
-              <Link
-                href="/"
-                className="transform transition duration-500 border-2 border-[#7a61ff] py-2 px-6 my-4 font-semibold text-[#7a61ff] hover:text-[#000] hover:bg-[#7a61ff] normal-case"
-              >
-                Back to the portfolio
-              </Link>
-            </Box>
-          </Box>
-        </Box>
-
-        <Footer profile={profile} />
-      </main>
+        <div className="h-8 sm:h-12" />
+      </SiteLayout>
     </>
   );
 }
@@ -157,24 +126,19 @@ export default function BlogIndex({ posts, tags, seo, profile, nav }) {
  * returned and this is where the slice goes.
  */
 export async function getStaticProps() {
-  const [{ posts }, tags, seo, profile, sections] = await Promise.all([
+  const [{ posts }, tags, chrome] = await Promise.all([
     getPublishedPosts(),
     getPostTags(),
-    getSeoSettings(),
-    getProfile(),
-    getSectionCopy(),
+    getSiteChrome(),
   ]);
 
   return {
     props: {
       posts,
       tags,
-      seo,
-      profile,
-      // `hasPosts` is true by definition on a page listing them — but only if
-      // there are any, and an empty archive should still not advertise itself in
-      // the nav.
-      nav: navFromSections(sections, { hasPosts: posts.length > 0 }),
+      // `chrome.hasPosts` drives the nav's Writing link: true here only if there
+      // are posts, so an empty archive still does not advertise itself.
+      chrome,
     },
     revalidate: 60,
   };
