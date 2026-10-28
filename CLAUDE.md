@@ -33,7 +33,9 @@ they record where the code intentionally diverged from the plan.
 | `lib/api/` | The shared API machinery: `handler.js`, `resource.js`, `resources/*` |
 | `lib/validation/` | Zod schemas — the same ones the client and server both use |
 | `lib/auth.js`, `lib/authOptions.js` | The three authorisation gates |
-| `components/` | Public sections + `components/admin/*` (the dashboard toolkit) |
+| `components/site/` | The public site: `Shell` (smooth scroll, page curtain, preloader, cursor — mounted once in `_app.js`), `SiteLayout` (nav, contact footer, toast), and the animated pieces in `motion.js` |
+| `pages/index.js`, `work.js`, `about.js` | The portfolio pages; `pages/blog/*` share the same layout |
+| `components/` | `components/admin/*` (the dashboard toolkit), `components/Blog/*`; the older single-page sections are no longer rendered |
 | `prisma/schema.prisma` | The data model. One migration so far (`_init`) |
 | `styles/globals.css` | The only stylesheet. There are no CSS modules |
 | `docs/` | The documentation this file indexes |
@@ -96,7 +98,8 @@ place on purpose; breaking one is usually silent. The full reasoning is in
 7. **Uploads are typed by their bytes,** not the filename or `Content-Type`
    (`lib/uploads.js`).
 8. **Each admin mutation rebuilds the affected public page** before responding
-   (`lib/revalidate.js`); `revalidate: 60` is only the backstop.
+   (`lib/revalidate.js`); `revalidate: 60` is only the backstop. A new public
+   page built from content must be added to `REVALIDATE_PATHS` (and the sitemap).
 9. **Security headers live in `lib/securityHeaders.js`,** applied via
    `next.config.mjs`. The CSP keeps `'unsafe-inline'` for MUI/Next — `docs/security.md`
    explains what that does and does not protect. `next/image` only loads the Blob
@@ -113,6 +116,16 @@ place on purpose; breaking one is usually silent. The full reasoning is in
 - **The dashboard is data-driven:** field descriptor lists + Zod schemas drive
   `EntityForm`; `lib/adminForm.js` holds the pure form logic; `lib/adminNav.js` is
   the one nav list, checked by a test against the files that exist.
+- **The public site themes with CSS variables** (`--mo-*` in `styles/globals.css`),
+  flipped by `data-theme`, which `_document.js` sets before paint. Use the
+  `mo-*` Tailwind colours, not hex values, in `components/site`.
+- **Public-site motion uses Motion for React** (`motion/react`). Easings live in
+  `components/site/ease.js`; reuse the primitives in `components/site/motion.js`
+  (`Reveal`, `SplitText`, `Magnetic`, …). Entrances wait on `useShell().ready`, so
+  they play as the preloader or page curtain uncovers the page. Internal links
+  use `TLink` to get the curtain. Tailwind runs with `important: true`, so never
+  put Tailwind transform or opacity utilities on an element Motion animates —
+  they would override its inline styles.
 - **Tests avoid a live database** — they use pure functions, source reading, or an
   injected fake Prisma client (`tests/draftVisibility.test.js`). Keep it that way.
 

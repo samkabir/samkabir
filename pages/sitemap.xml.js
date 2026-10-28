@@ -65,6 +65,10 @@ export async function getServerSideProps({ res }) {
     // The home page changes whenever any content does, so its lastmod is the most
     // recent thing on the site rather than a fixed date.
     { loc: absoluteUrl(seo.canonicalUrl, '/'), lastmod: newestPost, changefreq: 'weekly', priority: '1.0' },
+    // The portfolio pages carry no dates of their own, so they omit lastmod
+    // rather than claim one.
+    { loc: absoluteUrl(seo.canonicalUrl, '/work'), lastmod: null, changefreq: 'monthly', priority: '0.9' },
+    { loc: absoluteUrl(seo.canonicalUrl, '/about'), lastmod: null, changefreq: 'monthly', priority: '0.9' },
     ...(posts.length
       ? [{ loc: absoluteUrl(seo.canonicalUrl, '/blog'), lastmod: newestPost, changefreq: 'weekly', priority: '0.8' }]
       : []),
