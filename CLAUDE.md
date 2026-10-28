@@ -18,9 +18,11 @@ is in plain language.
 
 ## Status
 
-Phases 1–9 are complete; this is Phase 10 (documentation). Phase 11 is deployment.
-`Plan.md` is the authoritative phase log — each completed phase ends with a "what
-was built" and a "deviations" section, and those deviations are load-bearing:
+Phases 1–10 are complete. Phase 11 (deployment) is in progress — the guide and
+`npm run verify:deploy` exist, and the site is being run against production;
+post-launch fixes land on short-lived branches. `Plan.md` is the authoritative
+phase log — each completed phase ends with a "what was built" and a "deviations"
+section, and those deviations are load-bearing:
 they record where the code intentionally diverged from the plan.
 
 ## Where things live
@@ -58,6 +60,7 @@ npm run assets:import  # push repo images + CV into Blob (one-off)
 npm run admin:create           # create the admin account (only way in)
 npm run admin:reset-password   # recovery — there is no email reset flow
 npm run media:prune            # find/remove unreferenced Blob files (-- --apply)
+npm run verify:deploy          # smoke-check a live deployment (docs/deployment.md)
 ```
 
 Every DB/script command runs through `scripts/with-env.mjs`, which loads `.env`
@@ -101,6 +104,11 @@ place on purpose; breaking one is usually silent. The full reasoning is in
    `next.config.mjs`. The CSP keeps `'unsafe-inline'` for MUI/Next — `docs/security.md`
    explains what that does and does not protect. `next/image` only loads the Blob
    host `next.config.mjs` allowlists.
+10. **`/cv` is never cached** (`pages/api/cv.js` sends `no-store`). It once
+    allowed `s-maxage` + `stale-while-revalidate`, and the CDN kept serving the
+    previous CV for minutes after a new one was activated — there is no purge
+    from the dashboard. Activation also calls `revalidatePublicPages` itself,
+    because it is a custom route outside `defineResource`.
 
 ## Conventions
 

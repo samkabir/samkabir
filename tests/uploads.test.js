@@ -7,6 +7,7 @@ import {
   formatBytes,
   inspectUpload,
   readImageDimensions,
+  downloadName,
   sanitiseDisplayName,
   sniffType,
   storageKey,
@@ -238,6 +239,37 @@ describe('storage keys', () => {
 
   it('puts documents in their own folder', () => {
     expect(storageKey({ kind: 'document', extension: 'pdf' })).toMatch(/^documents\//);
+  });
+
+  it('gives a document a readable filename under a random folder', () => {
+    // The browser saves a PDF under its last path segment, so a CV stored as
+    // `<hex>.pdf` downloaded as a string of digits.
+    const key = storageKey({
+      kind: 'document',
+      extension: 'pdf',
+      originalName: 'Samiul Kabir CV (2026).pdf',
+    });
+
+    expect(key).toMatch(/^documents\/\d{4}-\d{2}\/[0-9a-f]{32}\/Samiul_Kabir_CV_2026\.pdf$/);
+  });
+
+  it('cannot be steered by a malicious document filename', () => {
+    const key = storageKey({
+      kind: 'document',
+      extension: 'pdf',
+      originalName: '../../..\\etc/passwd\u0000.exe',
+    });
+
+    expect(key).not.toMatch(/\.\./);
+    expect(key.split('/')).toHaveLength(4);
+    expect(key).toMatch(/\/passwd\.pdf$/);
+  });
+
+  it('falls back to a generic document name', () => {
+    expect(downloadName('')).toBe('document');
+    expect(downloadName(null)).toBe('document');
+    expect(downloadName('#%&.pdf')).toBe('document');
+    expect(downloadName('x'.repeat(200))).toHaveLength(80);
   });
 
   it('is different every time, so two uploads cannot collide', () => {

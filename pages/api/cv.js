@@ -35,16 +35,23 @@ export default async function cv(req, res) {
   }
 
   /**
-   * A short shared cache, and none in the browser.
+   * Not cached anywhere — not by the browser, and not by the CDN.
    *
-   * `s-maxage=60` keeps the CDN from asking the database on every click, while
-   * `max-age=0` means a visitor who saved the link is never handed a stale
-   * redirect from their own cache — the far more confusing of the two failures,
-   * because clearing someone else's browser cache is not an option.
+   * This used to allow `s-maxage=60, stale-while-revalidate=300`, on the theory
+   * that a CDN hit saves a database query. In practice it meant that after
+   * activating a new version, `/cv` kept redirecting to the *old* PDF for up to
+   * six minutes: the CDN served the cached redirect for a minute, then served it
+   * stale for five more while it revalidated in the background. Nothing in the
+   * dashboard can purge that cache, so "I activated it and the site still gives
+   * me the old CV" had no fix but waiting.
+   *
+   * The query is one indexed lookup on a link that is clicked a handful of times
+   * a day, so there is nothing worth caching. Activation must take effect on the
+   * very next click.
    *
    * 302, not 301: a permanent redirect is cached indefinitely by browsers and
    * would pin the link to whichever CV was active the first time it was clicked.
    */
-  res.setHeader('Cache-Control', 'public, max-age=0, s-maxage=60, stale-while-revalidate=300');
+  res.setHeader('Cache-Control', 'no-store, max-age=0');
   res.redirect(302, active.media.url);
 }

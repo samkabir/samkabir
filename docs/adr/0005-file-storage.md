@@ -93,12 +93,18 @@ SVG rejected" has an answer.
 
 ### 6. The client's filename never reaches the storage path
 
-Keys are `{images|documents}/YYYY-MM/{16 random bytes}.{extension}`, where the
-extension is the one the bytes earned. This closes off path traversal, null
+Image keys are `images/YYYY-MM/{16 random bytes}.{extension}`, where the
+extension is the one the bytes earned. Document keys are
+`documents/YYYY-MM/{16 random bytes}/{name}.{extension}`: a PDF is something a
+visitor saves, and the browser names the file after the last path segment, so a
+CV stored as `{hex}.pdf` downloaded under a meaningless string of digits. `{name}`
+is the uploaded filename reduced to `[A-Za-z0-9_-]` (`downloadName` in
+`lib/uploads.js`) — no separator or dot survives — and the random folder still
+makes every key unique. This closes off path traversal, null
 bytes, absurd lengths, case-collisions on case-insensitive stores, and two
 uploads called `screenshot.png` overwriting each other — by construction, rather
 than by sanitising a hostile string. The original name is kept for display and
-in the audit log only.
+in the audit log; for documents, only its allowlisted form appears in the path.
 
 ### 7. Dimensions are parsed by hand, not with `sharp`
 
@@ -135,9 +141,14 @@ working and starts serving the new file.
 
 302 rather than 301 — a permanent redirect is cached indefinitely by browsers and
 would pin the link to whichever CV was active the first time it was clicked, and
-there is no way to clear someone else's cache. `s-maxage=60` lets the CDN absorb
-traffic; `max-age=0` keeps the visitor's own browser from holding a stale
-redirect.
+there is no way to clear someone else's cache.
+
+The redirect is `Cache-Control: no-store` — cached by neither the browser nor the
+CDN. It originally allowed `s-maxage=60, stale-while-revalidate=300` so the CDN
+could absorb traffic, and that was a mistake: after activating a new version,
+`/cv` kept redirecting to the old PDF for up to six minutes, and nothing in the
+dashboard can purge the CDN. One indexed query per click on a link clicked a few
+times a day is not worth caching; activation taking effect on the next click is.
 
 It is deliberately **not** built with `createHandler`, and written longhand so
 that being public is a visible choice rather than a missing import. A CV link

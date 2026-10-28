@@ -134,7 +134,9 @@ is what lets `/cv` be a stable link to whichever `Resume` row is active and lets
 
 All uploads go through `lib/storage.js` (Vercel Blob) and `lib/uploads.js`, which
 types a file by its **magic bytes**, not its name or declared `Content-Type`, and
-gives it a random key that never contains the filename. ADR 0005 covers the
+gives it a random key. Images never carry the filename; a document's key ends in
+an allowlisted (`[A-Za-z0-9_-]`) form of it under the random folder, so a
+downloaded CV is not named after a hex string. ADR 0005 covers the
 byte-detection and the deletion-ordering subtlety (destroy the file *after* the row
 is gone, or a rejected delete leaves a row pointing at nothing).
 

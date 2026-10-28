@@ -82,6 +82,12 @@ Your résumé, as versioned uploads.
   every link you have already shared (email signature, LinkedIn) keeps working and
   now shows the new file.
 - Old versions stay in the list; you can re-activate a previous one if you need to.
+- The change is instant: the very next click on **Resume** gets the version you
+  just activated.
+- **Name your PDF file before uploading it** (for example `Samiul_Kabir_CV.pdf`)
+  — that is the name visitors' browsers save it under. Spaces and symbols become
+  underscores. CVs uploaded before this change keep their old random-looking
+  name; re-upload one if you want it renamed.
 
 ## Blog
 

@@ -128,8 +128,10 @@ regression test now guards it.
 `Content-Type` or the filename — a PDF renamed `.png` is rejected as a PDF, an HTML
 document declared as an image is rejected as HTML, and SVG is refused outright
 (it is a script-bearing format). Size is bounded below Vercel's request-body
-limit. Storage keys are random and never contain the uploaded filename, so a
-crafted name cannot steer where a file lands or collide with another. All asserted
+limit. Storage keys are random. Images never contain the uploaded filename;
+documents end in an allowlisted `[A-Za-z0-9_-]` form of it under a random
+folder (so a CV downloads with a readable name), which leaves no separator or
+dot for a crafted name to steer where a file lands, and no way to collide. All asserted
 in `tests/uploads.test.js`, including the security-relevant "PDF renamed as PNG".
 
 ## XSS, injection, and mass-assignment

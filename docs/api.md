@@ -235,9 +235,11 @@ the site had written it.
 The limit is 4 MB, below Vercel's 4.5 MB serverless request-body limit, and is
 enforced while streaming rather than after buffering.
 
-**The uploaded filename never becomes the storage path.** Keys are
-`{images|documents}/YYYY-MM/{32 hex}.{ext}`, with the extension the bytes earned.
-The original name is kept for display and in the audit log only.
+**The uploaded filename never steers the storage path.** Image keys are
+`images/YYYY-MM/{32 hex}.{ext}`; document keys are
+`documents/YYYY-MM/{32 hex}/{name}.{ext}`, where `{name}` is the uploaded name
+reduced to `[A-Za-z0-9_-]` so a downloaded CV gets a readable filename. The
+extension is always the one the bytes earned.
 
 Image dimensions are read from the file header where the format allows (PNG, GIF,
 JPEG, WebP); AVIF yields null.
@@ -272,8 +274,13 @@ link. The URL never changes: uploading a new CV activates a new row pointing at 
 new object, so every link already shared keeps working and starts serving the new
 file.
 
-404 while no resume is active, uncached so it stops being a 404 the moment one
-is. 302 rather than 301, since a permanent redirect would be cached indefinitely
+Never cached — `no-store`, for the browser and the CDN alike — so activating a
+different version changes what the next click downloads. A cached redirect once
+kept serving the previous CV for minutes after activation. Likewise the 404 while
+no resume is active stops being a 404 the moment one is.
+
+Activating also rebuilds the home page, since the Resume button only renders
+while a CV is active. 302 rather than 301, since a permanent redirect would be cached indefinitely
 and pin the link to whichever CV was active the first time it was clicked.
 
 ---

@@ -85,13 +85,15 @@ describe('GET /cv', () => {
     expect((await invoke()).statusCode).toBe(302);
   });
 
-  it('lets a CDN cache briefly but never the browser', async () => {
+  it('is not cached by the CDN or the browser', async () => {
+    // A cached redirect kept serving the previous CV for minutes after a new
+    // version was activated — activation has to show on the very next click.
     prismaMock.resume.findFirst.mockResolvedValue({ media: { url: 'https://blob.example/a.pdf' } });
 
     const cacheControl = (await invoke()).getHeader('cache-control');
 
-    expect(cacheControl).toContain('s-maxage=60');
-    expect(cacheControl).toContain('max-age=0');
+    expect(cacheControl).toContain('no-store');
+    expect(cacheControl).not.toMatch(/s-maxage|stale-while-revalidate|public/);
   });
 
   it('404s when no CV is published, without caching that', async () => {
