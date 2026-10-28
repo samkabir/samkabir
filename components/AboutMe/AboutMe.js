@@ -1,12 +1,12 @@
-import { Box, Typography } from '@mui/material';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import Image from 'next/image';
 import SkillCard from '../SkillCard/SkillCard';
-import Popover from '@mui/material/Popover';
-import AOS from 'aos';
-import 'aos/dist/aos.css';
+import Reveal from '../ui/Reveal';
+import SectionHeading from '../ui/SectionHeading';
+import { trackPointer } from '../ui/spotlight';
 import { leetcodeProfileUrl } from '../../lib/leetcode';
 
-const ACCENT = 'text-[#7a61ff] font-semibold';
+const ACCENT = 'text-[#c9c2ff] font-semibold';
 
 /**
  * One education row, in the prose the site already used.
@@ -46,6 +46,53 @@ function EducationLine({ row }) {
     );
 }
 
+/**
+ * Counts from zero to `value` once it scrolls into view, easing out so the last
+ * digits settle rather than stop. Reduced motion shows the number outright.
+ */
+function CountUp({ value }) {
+    const ref = useRef(null);
+    const [shown, setShown] = useState(0);
+
+    useEffect(() => {
+        const node = ref.current;
+        if (!node) return undefined;
+
+        const reduced = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+        const duration = reduced ? 0 : 1600;
+        let frame = 0;
+
+        const run = () => {
+            const start = performance.now();
+            const step = (now) => {
+                const t = duration ? Math.min(1, (now - start) / duration) : 1;
+                setShown(Math.round(value * (1 - Math.pow(1 - t, 4))));
+                if (t < 1) frame = requestAnimationFrame(step);
+            };
+            frame = requestAnimationFrame(step);
+        };
+
+        if (typeof IntersectionObserver === 'undefined') {
+            run();
+            return () => cancelAnimationFrame(frame);
+        }
+
+        const io = new IntersectionObserver(([entry]) => {
+            if (!entry.isIntersecting) return;
+            io.disconnect();
+            run();
+        }, { threshold: 0.5 });
+
+        io.observe(node);
+        return () => {
+            io.disconnect();
+            cancelAnimationFrame(frame);
+        };
+    }, [value]);
+
+    return <span ref={ref}>{shown}</span>;
+}
+
 const AboutMe = ({
     profile,
     skills = [],
@@ -54,7 +101,6 @@ const AboutMe = ({
 }) => {
     const [data, setData] = useState();
     const [statsFailed, setStatsFailed] = useState(false);
-    const [anchorEl, setAnchorEl] = useState(null);
 
     const about = sections.about;
     const skillsSection = sections.skills;
@@ -62,6 +108,7 @@ const AboutMe = ({
     // `|| undefined` rather than the raw value: a default parameter only fires for
     // `undefined`, so a null column would otherwise build `leetcode.com/null/`.
     const leetcodeUsername = profile?.leetcodeUsername || undefined;
+    const avatar = profile?.avatar;
 
     /**
      * The solved count, from this site's own endpoint.
@@ -101,112 +148,110 @@ const AboutMe = ({
 
         return () => controller.abort();
     }, [showLeetcode])
-    useEffect(() => {
-        AOS.init();
-      }, [])
 
+    const hasAside = Boolean(avatar) || showLeetcode;
 
-
-    const handlePopoverOpen = (event) => {
-        setAnchorEl(event.currentTarget);
-    };
-
-    const handlePopoverClose = () => {
-        setAnchorEl(null);
-    };
-
-    const open = Boolean(anchorEl);
     return (
-        <Box className='py-10' id={about?.anchor || 'about'} data-aos="fade-down" data-aos-easing="ease-in-out" data-aos-duration="1000" data-aos-delay="50" data-aos-once="true">
-            <Box>
-                <Typography variant='h4' className='font-semibold text-[#d2d2d2]'>
-                    <span className='text-[#7a61ff]'>{about?.numberLabel || '00.'} </span> {about?.heading || 'About Me'}
-                </Typography>
-            </Box>
-            <Box className='md:grid md:grid-cols-2 gap-4 text-[#d2d2d2]'>
-                <Box>
-                    <Typography variant='subtitle1' className='pt-6'>
-                    {profile?.bio}
-                    </Typography>
-                    <Box className='md:pl-4'>
-                        <ul className='list-disc'>
+        <section className="py-20 md:py-28" id={about?.anchor || 'about'}>
+            <SectionHeading numberLabel={about?.numberLabel || '00.'} heading={about?.heading || 'About Me'} />
+
+            <div className={`grid gap-10 ${hasAside ? 'lg:grid-cols-[1.4fr_1fr]' : ''}`}>
+                <div>
+                    {profile?.bio ? (
+                        <Reveal as="p" className="text-[#b4bdd6] text-base md:text-lg leading-relaxed">
+                            {profile.bio}
+                        </Reveal>
+                    ) : null}
+
+                    {education.length ? (
+                        <ol className="relative mt-10 ml-2 border-l border-[rgba(148,163,222,0.18)] space-y-6">
                             {education.map((row, i) => (
-                                <li key={row.id}>
-                                    {/* The first row sits closer to the paragraph above it than the
-                                        rest do to each other — pt-6 then pt-2, as before. */}
-                                    <Typography variant='subtitle2' className={i === 0 ? 'pt-6' : 'pt-2'}>
+                                <Reveal as="li" key={row.id} delay={i * 120} className="relative pl-7">
+                                    <span
+                                        aria-hidden="true"
+                                        className="absolute -left-[7px] top-1.5 w-3 h-3 rounded-full bg-[#0b1222] border-2 border-accent shadow-[0_0_12px_rgba(122,97,255,0.8)]"
+                                    />
+                                    <p className="text-[#b4bdd6] text-sm md:text-base leading-relaxed">
                                         <EducationLine row={row} />
-                                    </Typography>
-                                </li>
+                                    </p>
+                                </Reveal>
                             ))}
-                        </ul>
-                    </Box>
-                </Box>
-                {/* <Box className='flex justify-center items-center mt-8 md:mt-0'>
-                    <Box className='transform transition duration-500 border-4 border-[#7a61ff] hover:border-[#fff] p-3 rounded '>
-                        <img src='/images/pic.webp' alt='ProfilePicture' className='rounded' width={300} />
-                    </Box>
-                </Box> */}
-            </Box>
-            <Box>
-                <Typography variant='h5' className='font-semibold text-[#d2d2d2] pt-10 pb-6'>
-                    <span className='text-[#7a61ff]'>{skillsSection?.numberLabel || '00.0'} </span>{skillsSection?.heading || 'Skill Stack'}
-                </Typography>
-            </Box>
+                        </ol>
+                    ) : null}
+                </div>
 
-            <Box className='flex flex-wrap mb-1'>
-                {
-                    skills && skills.map((item, i) => (
-                        <SkillCard key={i} name={item} />
-                    ))
-                }
-            </Box>
-            {showLeetcode ? (
-            <Box className='flex'>
-                <Box className='flex items-center pr-6'>
-                    <Typography variant='h6' className='text-[#d2d2d2] font-semibold w-full'
-                    aria-owns={open ? 'mouse-over-popover' : undefined}
-                    aria-haspopup="true"
-                    onMouseEnter={handlePopoverOpen}
-                    onMouseLeave={handlePopoverClose}
-                    >
-                        LeetCode Problems Solved
-                    </Typography>
-                    <Popover
-                        id="mouse-over-popover"
-                        sx={{
-                            pointerEvents: 'none',
-                        }}
-                        open={open}
-                        anchorEl={anchorEl}
-                        anchorOrigin={{
-                            vertical: 'bottom',
-                            horizontal: 'left',
-                        }}
-                        transformOrigin={{
-                            vertical: 'top',
-                            horizontal: 'left',
-                        }}
-                        onClose={handlePopoverClose}
-                        disableRestoreFocus
-                    >
-                        <Typography sx={{ p: 1 }}>It ain&apos;t much, but it&apos;s honest work. Click on the number and View my LeetCode Profile.</Typography>
-                    </Popover>
-                </Box>
-                <a href={leetcodeProfileUrl(leetcodeUsername)} target="_blank" rel="noreferrer">
-                    <Box className='border-4 border-[#fff] rounded-full w-min py-2 px-3 text-[#7a61ff] font-semibold text-xl hover:border-[#7a61ff] hover:text-[#7a61ff] cursor-pointer transform transition duration-500'>
-                        {/* A dash rather than a blank circle when the count is
-                            unavailable: the link still works, and an empty ring
-                            reads as a broken layout. */}
-                        {data ? data.totalSolved : statsFailed ? '—' : '…'}
-                    </Box>
-                </a>
-            </Box>
+                {hasAside ? (
+                    <div className="flex flex-col gap-6 sm:flex-row lg:flex-col items-center lg:items-stretch">
+                        {avatar ? (
+                            <Reveal delay={100} className="group relative w-64 max-w-full mx-auto">
+                                <span
+                                    aria-hidden="true"
+                                    className="absolute inset-0 rounded-2xl border-2 border-accent translate-x-4 translate-y-4 transition-transform duration-500 group-hover:translate-x-2 group-hover:translate-y-2"
+                                />
+                                <div className="relative overflow-hidden rounded-2xl">
+                                    <Image
+                                        src={avatar.url}
+                                        alt={avatar.alt || profile?.fullName || 'Portrait'}
+                                        width={avatar.width ?? 400}
+                                        height={avatar.height ?? 400}
+                                        sizes="256px"
+                                        className="w-full h-auto grayscale-[40%] transition duration-500 group-hover:grayscale-0 group-hover:scale-105"
+                                    />
+                                    <span aria-hidden="true" className="absolute inset-0 bg-accent mix-blend-multiply opacity-30 transition-opacity duration-500 group-hover:opacity-0" />
+                                </div>
+                            </Reveal>
+                        ) : null}
+
+                        {showLeetcode ? (
+                            <Reveal delay={200} className="w-full">
+                                <a
+                                    href={leetcodeProfileUrl(leetcodeUsername)}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    onPointerMove={trackPointer}
+                                    className="spotlight glass group block rounded-2xl p-6 transition-transform duration-500 hover:-translate-y-1"
+                                >
+                                    <div className="flex items-center justify-between">
+                                        <span className="font-mono text-xs uppercase tracking-[0.2em] text-[#94a0bf]">LeetCode</span>
+                                        <svg className="w-4 h-4 text-[#94a0bf] transition-transform duration-500 group-hover:translate-x-1 group-hover:-translate-y-1 group-hover:text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden="true">
+                                            <path strokeLinecap="round" strokeLinejoin="round" d="M7 17L17 7M9 7h8v8" />
+                                        </svg>
+                                    </div>
+                                    <div className="mt-4 text-5xl md:text-6xl font-extrabold tracking-tight text-gradient tabular-nums">
+                                        {/* A dash rather than a blank when the count is unavailable:
+                                            the link still works, and an empty card reads as a
+                                            broken layout. */}
+                                        {data ? <CountUp value={data.totalSolved} /> : statsFailed ? '—' : '…'}
+                                    </div>
+                                    <p className="mt-1 text-sm font-medium text-[#e6e9f5]">Problems solved</p>
+                                    <p className="mt-3 text-xs text-[#94a0bf]">
+                                        It ain&apos;t much, but it&apos;s honest work.
+                                    </p>
+                                </a>
+                            </Reveal>
+                        ) : null}
+                    </div>
+                ) : null}
+            </div>
+
+            {skills.length ? (
+                <div className="mt-20">
+                    <SectionHeading
+                        as="h3"
+                        size="sm"
+                        numberLabel={skillsSection?.numberLabel || '00.0'}
+                        heading={skillsSection?.heading || 'Skill Stack'}
+                    />
+                    <ul className="flex flex-wrap gap-2.5 -mt-4">
+                        {skills.map((item, i) => (
+                            <Reveal as="li" key={`${item}-${i}`} delay={Math.min(i * 30, 600)}>
+                                <SkillCard name={item} />
+                            </Reveal>
+                        ))}
+                    </ul>
+                </div>
             ) : null}
-
-
-
-        </Box>
+        </section>
     );
 };
 

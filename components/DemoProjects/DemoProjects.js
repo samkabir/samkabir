@@ -1,8 +1,7 @@
-import { useEffect, useState } from 'react';
-import { Box, Typography } from '@mui/material';
+import { useState } from 'react';
 import ProjectCard from '../ProjectCard/ProjectCard';
-import AOS from 'aos';
-import 'aos/dist/aos.css';
+import Reveal from '../ui/Reveal';
+import SectionHeading from '../ui/SectionHeading';
 
 /**
  * The projects section: three by default, all of them behind a toggle.
@@ -18,43 +17,58 @@ import 'aos/dist/aos.css';
  * "View All Projects" button, which reads as a bug rather than as an unset flag.
  */
 const DemoProjects = ({ projects = [], section }) => {
-    useEffect(() => {
-        AOS.init();
-    }, [])
-
     const [showAll, setShowAll] = useState(false);
 
     const featured = projects.filter((project) => project.isFeatured);
     const someProjects = featured.length > 0 ? featured : projects.slice(0, 3);
     const visible = showAll ? projects : someProjects;
+    const anchor = section?.anchor || 'project';
 
     return (
-        <Box className='py-10' id={section?.anchor || 'project'} data-aos="fade-down" data-aos-easing="ease-in-out" data-aos-duration="1000" data-aos-delay="50" data-aos-once="true">
-            <Box>
-                <Typography variant='h4' className='font-semibold text-[#d2d2d2]'>
-                    <span className='text-[#7a61ff]'>{section?.numberLabel || '10.'} </span> {section?.heading || 'Some Projects I worked on...'}
-                </Typography>
-            </Box>
-            <Box className='md:grid md:grid-cols-3 gap-4 mt-8' >
-                {
-                    visible.map((e) => (
-                        <ProjectCard key={e.id} e={e} />
-                    ))
-                }
-            </Box>
+        <section className="py-20 md:py-28" id={anchor}>
+            <SectionHeading
+                numberLabel={section?.numberLabel || '10.'}
+                heading={section?.heading || 'Some Projects I worked on...'}
+            />
+
+            <ul className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                {visible.map((e, i) => (
+                    <Reveal as="li" key={e.id} delay={(i % 3) * 120} className="h-full">
+                        <ProjectCard e={e} />
+                    </Reveal>
+                ))}
+            </ul>
+
             {/* Only offered when there is more to show than is already on screen —
                 a "View All Projects" button that reveals nothing is worse than none. */}
-            {
-                projects.length > someProjects.length ? (
-                    <Box className='flex justify-center mt-10'>
-                        <button className='transform transition duration-500 border-2 border-[#7a61ff] py-2 px-6 my-4 font-semibold text-[#7a61ff] hover:text-[#000] hover:bg-[#7a61ff] normal-case' onClick={() => { setShowAll(!showAll) }}>
-                            {showAll ? 'View Less Projects' : 'View All Projects'}
-                        </button>
-                    </Box>
-                ) : null
-            }
-
-        </Box>
+            {projects.length > someProjects.length ? (
+                <div className="flex justify-center mt-14">
+                    <button
+                        type="button"
+                        className="btn btn-ghost"
+                        aria-expanded={showAll}
+                        onClick={() => {
+                            // Collapsing from far down the list would leave the reader
+                            // stranded below a section that just got shorter.
+                            if (showAll) document.getElementById(anchor)?.scrollIntoView({ behavior: 'smooth' });
+                            setShowAll(!showAll);
+                        }}
+                    >
+                        {showAll ? 'View Less Projects' : `View All Projects (${projects.length})`}
+                        <svg
+                            className={`w-4 h-4 transition-transform duration-500 ${showAll ? 'rotate-180' : ''}`}
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth={2}
+                            aria-hidden="true"
+                        >
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M6 9l6 6 6-6" />
+                        </svg>
+                    </button>
+                </div>
+            ) : null}
+        </section>
     );
 };
 

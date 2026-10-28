@@ -1,8 +1,5 @@
-import { Box, Typography } from '@mui/material';
-import AOS from 'aos';
-import 'aos/dist/aos.css';
-import { useEffect } from 'react';
-import { rubikFont } from '../../lib/fonts';
+import Reveal from '../ui/Reveal';
+import { trackPointer } from '../ui/spotlight';
 import { socialIcon } from '../SocialMediaLinks/socialIcons';
 
 /**
@@ -16,57 +13,70 @@ import { socialIcon } from '../SocialMediaLinks/socialIcons';
  * The icon row here is the mobile counterpart to the desktop rail in
  * `SocialMediaLinks`: same rows, same lookup, different styling. It shows each
  * platform's colour outright rather than on hover, since there is no hover on a
- * touchscreen.
+ * touchscreen. The rail only appears on wide screens (`lg`), so the row stays
+ * until then.
  */
 const Contact = ({ links = [], profile, section }) => {
-    useEffect(() => {
-        AOS.init();
-      }, [])
-
     const email = profile?.publicEmail;
 
     return (
-        <Box className='py-10 mt-10 flex flex-col justify-center items-center mb-8' id={section?.anchor || 'contact'} data-aos="fade-down" data-aos-easing="ease-in-out" data-aos-duration="1000" data-aos-delay="50" data-aos-once="true">
-            <Box className='flex flex-col justify-center items-center'>
-                <Typography variant='subtitle1' className='font-semibold text-[#7a61ff] py-4'>
-                    <span className='text-[#7a61ff]'>{section?.numberLabel || '11.'} </span> {section?.navLabel || 'Contact'}
-                </Typography>
-                <Typography variant='h2' className='font-semibold text-[#d2d2d2] hidden md:block'>
-                    {section?.heading || 'Get In Touch'}
-                </Typography>
-                <Typography variant='h3' className='font-semibold text-[#d2d2d2] md:hidden'>
-                    {section?.heading || 'Get In Touch'}
-                </Typography>
-            </Box>
-            <Box className='mt-6'>
-                <Typography variant='subtitle1' className={`font-[600] text-[#d2d2d2] ${rubikFont.className}`}>
-                    {section?.subheading || 'Feel free to contact me anytime.'}
-                </Typography>
-                {email ? (
-                    <Box className={`flex justify-center my-12 ${rubikFont.className}`}>
-                        <a href={`mailto:${email}`} className='transform transition duration-500 border-2 border-[#7a61ff] py-2 px-6 my-4 font-semibold text-[#7a61ff] hover:text-[#000] hover:bg-[#7a61ff] normal-case'>
-                            Say Hello
-                        </a>
-                    </Box>
-                ) : null}
-                <Box className='md:hidden'>
-                    <ul className='list-none flex justify-center'>
-                        {links.map((link, i) => {
-                            const { Icon, colorClass } = socialIcon(link.iconKey);
-                            const spacing = i === links.length - 1 ? 'mb-4' : 'mb-2';
+        <section className="py-24 md:py-32" id={section?.anchor || 'contact'}>
+            <Reveal>
+                <div
+                    onPointerMove={trackPointer}
+                    className="spotlight glass relative overflow-hidden rounded-3xl px-6 py-16 md:px-16 md:py-20 text-center"
+                >
+                    <div
+                        aria-hidden="true"
+                        className="pointer-events-none absolute -top-32 left-1/2 -translate-x-1/2 w-[520px] h-[260px] rounded-full bg-accent opacity-25 blur-[100px]"
+                    />
 
-                            return (
-                                <li key={link.id}>
-                                    <a className="active" href={link.url} target="_blank" rel="noreferrer" aria-label={link.label}>
-                                        <Icon className={`text-4xl mx-4 ${spacing} ${colorClass}`} />
-                                    </a>
-                                </li>
-                            );
-                        })}
-                    </ul>
-                </Box>
-            </Box>
-        </Box>
+                    <p className="relative font-mono text-sm text-mint">
+                        {section?.numberLabel || '11.'} {section?.navLabel || 'Contact'}
+                    </p>
+                    <h2 className="relative mt-4 text-4xl md:text-6xl font-extrabold tracking-tight text-[#f1f3fb]">
+                        {section?.heading || 'Get In Touch'}
+                    </h2>
+                    <p className="relative mt-5 max-w-xl mx-auto text-base md:text-lg text-[#b4bdd6]">
+                        {section?.subheading || 'Feel free to contact me anytime.'}
+                    </p>
+
+                    {email ? (
+                        <div className="relative mt-10 flex flex-col items-center gap-4">
+                            <a href={`mailto:${email}`} className="btn btn-primary text-base px-8 py-4">
+                                Say Hello
+                                <span className="btn-arrow" aria-hidden="true">→</span>
+                            </a>
+                            <a href={`mailto:${email}`} className="font-mono text-xs text-[#94a0bf] hover:text-white transition-colors">
+                                {email}
+                            </a>
+                        </div>
+                    ) : null}
+
+                    {links.length ? (
+                        <ul className="relative lg:hidden list-none flex justify-center gap-3 mt-10">
+                            {links.map((link) => {
+                                const { Icon, colorClass } = socialIcon(link.iconKey);
+
+                                return (
+                                    <li key={link.id}>
+                                        <a
+                                            href={link.url}
+                                            target="_blank"
+                                            rel="noreferrer"
+                                            aria-label={link.label}
+                                            className="grid place-items-center w-12 h-12 rounded-full border border-[rgba(148,163,222,0.18)] bg-[rgba(255,255,255,0.03)] transition-transform duration-300 hover:-translate-y-1"
+                                        >
+                                            <Icon className={`text-[22px] ${colorClass}`} />
+                                        </a>
+                                    </li>
+                                );
+                            })}
+                        </ul>
+                    ) : null}
+                </div>
+            </Reveal>
+        </section>
     );
 };
 

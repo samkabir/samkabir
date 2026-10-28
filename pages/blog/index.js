@@ -70,7 +70,7 @@ export default function BlogIndex({ posts, tags, seo, profile, nav }) {
         {seo?.twitterHandle ? <meta name="twitter:site" content={seo.twitterHandle} /> : null}
       </Head>
 
-      <main>
+      <main className="site">
         <Header sections={nav} />
 
         <Box className="px-4 md:px-20 py-8 cursor-default">

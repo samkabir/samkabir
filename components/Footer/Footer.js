@@ -1,6 +1,3 @@
-import { Box } from '@mui/material';
-import { rubikFont } from '../../lib/fonts';
-
 /**
  * The two-line footer.
  *
@@ -26,18 +23,19 @@ const Footer = ({ profile }) => {
     const attributionUrl = profile?.attributionUrl;
 
     return (
-        <Box className='flex flex-col justify-center items-center mb-6'>
-            {credit ? (
-                <Box className={`text-[#d2d2d2] text-xs hover:text-[#7a61ff] cursor-default ${rubikFont.className}`}>
-                    {credit}
-                </Box>
-            ) : null}
-            {attributionLabel && attributionUrl ? (
-                <Box className={`text-[#d2d2d2] text-xs cursor-default ${rubikFont.className}`}>
-                    Web Design Idea - <a href={attributionUrl} target="_blank" rel="noreferrer" className="pointer text-[#64ffda]">{attributionLabel}</a>
-                </Box>
-            ) : null}
-        </Box>
+        <footer className="site border-t border-[rgba(148,163,222,0.08)] py-8 px-5">
+            <div className="flex flex-col items-center gap-1.5 font-mono text-xs text-[#94a0bf]">
+                {credit ? <p className="hover:text-accent-soft transition-colors">{credit}</p> : null}
+                {attributionLabel && attributionUrl ? (
+                    <p>
+                        Web Design Idea -{' '}
+                        <a href={attributionUrl} target="_blank" rel="noreferrer" className="text-mint hover:underline underline-offset-4">
+                            {attributionLabel}
+                        </a>
+                    </p>
+                ) : null}
+            </div>
+        </footer>
     );
 };
 

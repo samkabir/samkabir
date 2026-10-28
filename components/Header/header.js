@@ -1,9 +1,6 @@
-import { Box } from '@mui/material';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
-import AOS from 'aos';
-import 'aos/dist/aos.css';
 
 /**
  * The nav, built from `SectionCopy` rows rather than four hardcoded `<li>`s.
@@ -24,101 +21,200 @@ import 'aos/dist/aos.css';
  * `sections` defaults to `[]` rather than to the old hardcoded list: an empty nav
  * on an unseeded database is obviously empty, whereas a fallback list would look
  * correct while linking to sections that are not there.
+ *
+ * The bar is sticky and turns to frosted glass once the page has scrolled. It
+ * slides away while scrolling down and comes back on any scroll up, and the link
+ * for whichever section is in view is highlighted — that one is found with an
+ * `IntersectionObserver` on the anchors the nav already knows about, so a link to
+ * `/blog` simply never matches.
  */
+function useScrollState() {
+    const [state, setState] = useState({ scrolled: false, hidden: false });
+
+    useEffect(() => {
+        let last = window.scrollY;
+        let frame = 0;
+
+        const update = () => {
+            frame = 0;
+            const y = window.scrollY;
+            const delta = y - last;
+            setState((prev) => {
+                const scrolled = y > 12;
+                // A small dead zone, so a trackpad's jitter does not flicker the bar.
+                const hidden = y > 160 && Math.abs(delta) > 4 ? delta > 0 : prev.hidden && y > 160;
+                return prev.scrolled === scrolled && prev.hidden === hidden ? prev : { scrolled, hidden };
+            });
+            last = y;
+        };
+
+        const onScroll = () => {
+            if (!frame) frame = requestAnimationFrame(update);
+        };
+
+        window.addEventListener('scroll', onScroll, { passive: true });
+        update();
+        return () => {
+            window.removeEventListener('scroll', onScroll);
+            if (frame) cancelAnimationFrame(frame);
+        };
+    }, []);
+
+    return state;
+}
+
+function useActiveSection(sections) {
+    const [active, setActive] = useState(null);
+    const anchors = sections.filter((s) => s.href.startsWith('#')).map((s) => s.href.slice(1));
+    const key = anchors.join('|');
+
+    useEffect(() => {
+        if (typeof IntersectionObserver === 'undefined') return undefined;
+        const nodes = key.split('|').map((id) => id && document.getElementById(id)).filter(Boolean);
+        if (!nodes.length) return undefined;
+
+        const io = new IntersectionObserver(
+            (entries) => {
+                const visible = entries.filter((e) => e.isIntersecting);
+                if (visible.length) setActive(visible[0].target.id);
+            },
+            { rootMargin: '-45% 0px -50% 0px' },
+        );
+        nodes.forEach((node) => io.observe(node));
+        return () => io.disconnect();
+    }, [key]);
+
+    return active;
+}
+
+const NavLabel = ({ section }) => (
+    <>
+        {section.numberLabel ? (
+            <span className="font-mono text-[0.8em] text-accent mr-1">{section.numberLabel}</span>
+        ) : null}
+        {section.label}
+    </>
+);
+
+const NavLink = ({ section, className, onClick, style }) =>
+    section.href.startsWith('#') ? (
+        <a href={section.href} className={className} onClick={onClick} style={style}>
+            <NavLabel section={section} />
+        </a>
+    ) : (
+        <Link href={section.href} className={className} onClick={onClick} style={style}>
+            <NavLabel section={section} />
+        </Link>
+    );
+
 const Header = ({ sections = [] }) => {
     const [navbar, setNavbar] = useState(false);
+    const { scrolled, hidden } = useScrollState();
+    const active = useActiveSection(sections);
+
     useEffect(() => {
-        AOS.init();
-    }, [])
+        if (!navbar) return undefined;
+        const onKey = (event) => event.key === 'Escape' && setNavbar(false);
+        window.addEventListener('keydown', onKey);
+        return () => window.removeEventListener('keydown', onKey);
+    }, [navbar]);
+
+    const solid = scrolled || navbar;
 
     return (
-        <nav className="w-full bg-[#141e30] md:pt-0 shadow" data-aos="fade-down" data-aos-easing="ease-in-out" data-aos-duration="1000" data-aos-delay="50" data-aos-once="true">
-            <div className="justify-between px-4 mx-auto lg:max-w-7xl md:items-center md:flex md:px-8">
-                <div>
-                    <div className="flex items-center justify-between py-3 md:py-5 md:block">
-                        <Link href="/">
-                            <Box>
-                                {/* Intrinsic size 342×262, rendered at 50px wide. Passing both
-                                    lets the browser reserve the right box before the file
-                                    arrives, which is what the plain <img> could not do. */}
-                                <Image
-                                    src="/images/Logo.png"
-                                    alt="Logo"
-                                    width={342}
-                                    height={262}
-                                    priority
-                                    style={{ width: '50px', height: 'auto' }}
-                                />
-                            </Box>
-                        </Link>
-                        <div className="md:hidden">
-                            <button
-                                className="p-2 text-gray-700 rounded-md outline-none focus:border-gray-400 focus:border"
-                                onClick={() => setNavbar(!navbar)}
-                            >
-                                {navbar ? (
-                                    <svg
-                                        xmlns="http://www.w3.org/2000/svg"
-                                        className="w-6 h-6"
-                                        viewBox="0 0 20 20"
-                                        fill="currentColor"
-                                    >
-                                        <path
-                                            fillRule="evenodd"
-                                            d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
-                                            clipRule="evenodd"
-                                        />
-                                    </svg>
-                                ) : (
-                                    <svg
-                                        xmlns="http://www.w3.org/2000/svg"
-                                        className="w-6 h-6"
-                                        fill="none"
-                                        viewBox="0 0 24 24"
-                                        stroke="currentColor"
-                                        strokeWidth={2}
-                                    >
-                                        <path
-                                            strokeLinecap="round"
-                                            strokeLinejoin="round"
-                                            d="M4 6h16M4 12h16M4 18h16"
-                                        />
-                                    </svg>
-                                )}
-                            </button>
-                        </div>
-                    </div>
-                </div>
-                <div>
-                    <div
-                        className={`flex-1 justify-self-center pb-3 mt-8 md:block md:pb-0 md:mt-0 ${navbar ? "block" : "hidden"
-                            }`}
-                    >
-                        <ul className="items-center justify-center space-y-8 md:flex md:space-x-6 md:space-y-0 font-semibold">
-                            {sections.map((section) => {
-                                const label = section.numberLabel ? (
-                                    <>
-                                        <span className='text-[#7a61ff]'>{section.numberLabel}</span> {section.label}
-                                    </>
-                                ) : (
-                                    section.label
-                                );
+        <header
+            className={`site sticky top-0 z-50 w-full transition-all duration-500 ${
+                hidden && !navbar ? '-translate-y-full' : 'translate-y-0'
+            } ${
+                solid
+                    ? 'bg-[rgba(11,18,34,0.72)] backdrop-blur-xl border-b border-[rgba(148,163,222,0.1)] shadow-[0_10px_30px_-15px_rgba(2,6,23,0.9)]'
+                    : 'bg-transparent border-b border-transparent'
+            }`}
+        >
+            <nav className="flex items-center justify-between px-5 md:px-10 mx-auto max-w-7xl h-[72px]">
+                <Link href="/" aria-label="Home" className="group relative flex items-center fade-up">
+                    <span
+                        aria-hidden="true"
+                        className="absolute -inset-2 rounded-xl bg-accent opacity-0 blur-lg transition-opacity duration-500 group-hover:opacity-30"
+                    />
+                    {/* Intrinsic size 342×262, rendered at 46px wide. Passing both
+                        lets the browser reserve the right box before the file
+                        arrives, which is what the plain <img> could not do. */}
+                    <Image
+                        src="/images/Logo.png"
+                        alt="Logo"
+                        width={342}
+                        height={262}
+                        priority
+                        className="relative transition-transform duration-500 group-hover:scale-110 group-hover:-rotate-6"
+                        style={{ width: '46px', height: 'auto' }}
+                    />
+                </Link>
 
-                                return (
-                                    <li key={section.key} className="text-gray-600 hover:text-[#7a61ff] my-2">
-                                        {section.href.startsWith('#') ? (
-                                            <a href={section.href}>{label}</a>
-                                        ) : (
-                                            <Link href={section.href}>{label}</Link>
-                                        )}
-                                    </li>
-                                );
-                            })}
-                        </ul>
-                    </div>
-                </div>
+                <ul className="hidden md:flex items-center gap-1 text-sm font-medium">
+                    {sections.map((section, i) => {
+                        const isActive = active && section.href === `#${active}`;
+                        return (
+                            <li key={section.key} className="fade-up" style={{ '--delay': `${100 + i * 70}ms` }}>
+                                <NavLink
+                                    section={section}
+                                    className={`relative block px-3 py-2 rounded-full transition-colors duration-300 ${
+                                        isActive
+                                            ? 'text-white bg-[rgba(122,97,255,0.14)]'
+                                            : 'text-[#94a0bf] hover:text-white hover:bg-[rgba(255,255,255,0.04)]'
+                                    }`}
+                                />
+                            </li>
+                        );
+                    })}
+                </ul>
+
+                <button
+                    type="button"
+                    className="md:hidden relative w-10 h-10 rounded-full text-[#e6e9f5] border border-[rgba(148,163,222,0.18)] bg-[rgba(255,255,255,0.03)]"
+                    aria-label={navbar ? 'Close menu' : 'Open menu'}
+                    aria-expanded={navbar}
+                    aria-controls="mobile-menu"
+                    onClick={() => setNavbar(!navbar)}
+                >
+                    <span
+                        className={`absolute left-1/2 top-1/2 h-[2px] w-4 -translate-x-1/2 rounded bg-current transition-transform duration-300 ${
+                            navbar ? 'rotate-45' : '-translate-y-[5px]'
+                        }`}
+                    />
+                    <span
+                        className={`absolute left-1/2 top-1/2 h-[2px] w-4 -translate-x-1/2 rounded bg-current transition-opacity duration-300 ${
+                            navbar ? 'opacity-0' : 'opacity-100'
+                        }`}
+                    />
+                    <span
+                        className={`absolute left-1/2 top-1/2 h-[2px] w-4 -translate-x-1/2 rounded bg-current transition-transform duration-300 ${
+                            navbar ? '-rotate-45' : 'translate-y-[5px]'
+                        }`}
+                    />
+                </button>
+            </nav>
+
+            <div
+                id="mobile-menu"
+                className={`md:hidden overflow-hidden transition-[max-height] duration-500 ${
+                    navbar ? 'max-h-[80vh] menu-open' : 'max-h-0'
+                }`}
+            >
+                <ul className="px-5 pb-6 pt-2 space-y-1 text-lg font-medium">
+                    {sections.map((section, i) => (
+                        <li key={section.key}>
+                            <NavLink
+                                section={section}
+                                onClick={() => setNavbar(false)}
+                                className="menu-link block py-3 border-b border-[rgba(148,163,222,0.08)] text-[#e6e9f5]"
+                                style={{ '--i': i }}
+                            />
+                        </li>
+                    ))}
+                </ul>
             </div>
-        </nav>
+        </header>
     );
 };
 

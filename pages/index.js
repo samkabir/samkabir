@@ -1,14 +1,12 @@
 import Head from 'next/head'
-import Header from '@/components/Header/header'
-import SocialMediaLinks from '@/components/SocialMediaLinks/SocialMediaLinks'
-import AboutMe from '@/components/AboutMe/AboutMe'
-import Experience from '@/components/Experience/Experience'
-import DemoProjects from '@/components/DemoProjects/DemoProjects'
-import Contact from '@/components/Contact/Contact'
-import MainComponent from '@/components/Home/MainComponent'
-import { Box } from '@mui/material'
-import Footer from '@/components/Footer/Footer'
-import ContractualExperiences from '@/components/ContractualExperiences/ContractualExperiences'
+import Shell from '@/components/landing/Shell'
+import Nav from '@/components/landing/Nav'
+import Hero from '@/components/landing/Hero'
+import SkillTapes from '@/components/landing/SkillTapes'
+import AboutBento from '@/components/landing/AboutBento'
+import ExperienceList from '@/components/landing/ExperienceList'
+import Work from '@/components/landing/Work'
+import ContactFooter from '@/components/landing/ContactFooter'
 import { getPageContent } from '@/lib/content'
 
 /**
@@ -59,33 +57,49 @@ export default function Home({ content }) {
         {seo?.canonicalUrl ? <link rel="canonical" href={seo.canonicalUrl} /> : null}
       </Head>
 
-      <main>
-        <Header sections={nav} />
-        <SocialMediaLinks links={socialLinks.sidebar} email={profile?.publicEmail} />
-        <Box className='px-4 md:px-20 py-8 cursor-default'>
-          <MainComponent profile={profile} hasResume={hasResume} />
-          <Box className='px-4 md:px-20'>
-            <AboutMe
-              profile={profile}
-              skills={skills}
-              education={education}
-              sections={sections}
-            />
-            <Experience experiences={experiences} section={sections.experience} />
-            <ContractualExperiences
-              experiences={contractualExperiences}
-              section={sections.contractual}
-            />
-            <DemoProjects projects={projects} section={sections.projects} />
-            <Contact
-              links={socialLinks.contact}
-              profile={profile}
-              section={sections.contact}
-            />
-          </Box>
-        </Box>
-        <Footer profile={profile} />
-      </main>
+      {/* The landing page has its own visual language, built in
+          `components/landing`. The blog still uses `Header`/`Footer`. */}
+      <Shell name={profile?.fullName}>
+        <span id="top" />
+        <Nav
+          items={nav}
+          contactHref={`#${sections.contact?.anchor || 'contact'}`}
+          email={profile?.publicEmail}
+          socialLinks={socialLinks.contact}
+        />
+        <main>
+          <Hero
+            profile={profile}
+            hasResume={hasResume}
+            workHref={`#${sections.projects?.anchor || 'project'}`}
+            nextHref={`#${sections.about?.anchor || 'about'}`}
+          />
+          <SkillTapes skills={skills} />
+          <AboutBento
+            profile={profile}
+            skills={skills}
+            education={education}
+            sections={sections}
+            socialLinks={socialLinks.contact}
+            hasResume={hasResume}
+          />
+          <ExperienceList
+            experiences={experiences}
+            section={sections.experience}
+            idPrefix="job"
+            fallback={{ anchor: 'exp', numberLabel: '01.', label: 'Experience', heading: 'Job Experiences' }}
+          />
+          <ExperienceList
+            compact
+            experiences={contractualExperiences}
+            section={sections.contractual}
+            idPrefix="contract"
+            fallback={{ anchor: 'contract-exp', numberLabel: '01.0', label: 'Contract', heading: 'Contractual Experiences' }}
+          />
+          <Work projects={projects} section={sections.projects} />
+          <ContactFooter section={sections.contact} profile={profile} socialLinks={socialLinks.contact} />
+        </main>
+      </Shell>
     </>
   )
 }

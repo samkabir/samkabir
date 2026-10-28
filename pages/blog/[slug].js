@@ -108,7 +108,7 @@ export default function BlogPost({ post, neighbours, seo, profile, nav, canonica
         />
       </Head>
 
-      <main>
+      <main className="site">
         <Header sections={nav} />
 
         <Box className="px-4 md:px-20 py-8 cursor-default">

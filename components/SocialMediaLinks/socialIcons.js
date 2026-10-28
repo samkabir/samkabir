@@ -20,12 +20,13 @@ import LinkedInIcon from '@mui/icons-material/LinkedIn';
  * quietly stops working.
  *
  * The rail colours on hover, the contact block colours always, which is why each
- * platform needs both forms.
+ * platform needs both forms. The shades are each brand's colour lifted enough to
+ * read on the dark navy background — GitHub's own near-black disappeared on it.
  */
 const ICONS = {
-  linkedin: { Icon: LinkedInIcon, hoverClass: 'hover:text-[#0072b1]', colorClass: 'text-[#0072b1]' },
-  github: { Icon: GitHubIcon, hoverClass: 'hover:text-[#171515]', colorClass: 'text-[#171515]' },
-  facebook: { Icon: FacebookIcon, hoverClass: 'hover:text-[#3b5998]', colorClass: 'text-[#3b5998]' },
+  linkedin: { Icon: LinkedInIcon, hoverClass: 'hover:text-[#2f8fe0]', colorClass: 'text-[#2f8fe0]' },
+  github: { Icon: GitHubIcon, hoverClass: 'hover:text-[#f0f6fc]', colorClass: 'text-[#f0f6fc]' },
+  facebook: { Icon: FacebookIcon, hoverClass: 'hover:text-[#4d7ff0]', colorClass: 'text-[#4d7ff0]' },
 };
 
 const FALLBACK = {
