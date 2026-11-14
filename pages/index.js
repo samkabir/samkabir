@@ -32,7 +32,7 @@ function featuredProjects(projects) {
   return flagged.length ? flagged : projects.slice(0, 3)
 }
 
-function Hero({ profile, currentRole, hasResume }) {
+function Hero({ profile, hasResume }) {
   const ref = useRef(null)
   const { ready } = useShell()
   const { scrollYProgress } = useScroll({ target: ref, offset: ['start start', 'end start'] })
@@ -59,15 +59,6 @@ function Hero({ profile, currentRole, hasResume }) {
       </motion.div>
 
       <motion.div style={{ y: textY, opacity: fade }} className="relative mx-auto w-full max-w-[1440px] px-5 sm:px-8 pb-10 sm:pb-14 pt-32">
-        {currentRole ? (
-          <motion.p {...appear(0.1)} className="mo-label flex flex-wrap items-center gap-x-3 gap-y-1 text-mo-muted">
-            <span className="mo-pulse" aria-hidden="true" />
-            <span>Currently</span>
-            <span className="text-mo-fg">{currentRole.jobPosition}</span>
-            <span className="text-mo-faint">at {currentRole.companyName}</span>
-          </motion.p>
-        ) : null}
-
         {headline ? (
           <SplitText
             as="h1"
@@ -200,7 +191,6 @@ export default function Home({ content, posts }) {
   } = content ?? {}
 
   const featured = featuredProjects(projects)
-  const currentRole = experiences.find((e) => e.isCurrent) ?? null
   const counts = {
     projects: projects.length,
     roles: experiences.length + contractualExperiences.length,
@@ -212,7 +202,7 @@ export default function Home({ content, posts }) {
     <SiteLayout chrome={content}>
       <SiteHead seo={seo} />
 
-      <Hero profile={profile} currentRole={currentRole} hasResume={hasResume} />
+      <Hero profile={profile} hasResume={hasResume} />
       <Intro profile={profile} sections={sections} counts={counts} />
 
       <div className="pt-16 sm:pt-24">
