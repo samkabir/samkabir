@@ -1,39 +1,42 @@
-import { Box } from '@mui/material';
+import { motion } from 'motion/react';
 import Link from 'next/link';
 
 /**
- * A tag, styled as the stack chips on a project card are.
- *
- * Deliberately the same border, radius, hover and transition as the `stacks`
- * chips in `ProjectCard` — the blog should read as part of this site rather than
- * as something bolted on, and reusing the existing vocabulary is most of how that
- * happens.
+ * A tag, in the same pill shape as the site's other chips.
  *
  * Renders as a link when `href` is given and as a plain chip otherwise, because
  * the same pill appears in two roles: navigation on the listing, and a label on
- * a post where the tag is describing the thing you are already reading.
+ * a post where the tag is describing the thing you are already reading. On the
+ * listing the active tag's dark backing slides from one pill to the next (a
+ * shared `layoutId`).
  */
 export default function TagPill({ name, href, count, active = false }) {
-  const base =
-    'border-2 rounded mr-2 mb-1 px-2 transform transition duration-500 text-sm';
-
-  const tone = active
-    ? 'text-[#7a61ff] border-[#7a61ff]'
-    : 'text-[#d6d6d6] border-[#d6d6d6] hover:border-[#7a61ff] hover:text-[#7a61ff]';
-
   const body = (
     <>
-      {name}
-      {typeof count === 'number' ? <span className="opacity-60"> {count}</span> : null}
+      {active ? (
+        <motion.span
+          layoutId="tag-pill"
+          className="absolute inset-0 rounded-full bg-mo-fg"
+          transition={{ type: 'spring', stiffness: 380, damping: 32 }}
+        />
+      ) : null}
+      <span className="relative">
+        {name}
+        {typeof count === 'number' ? <span className="opacity-60"> {count}</span> : null}
+      </span>
     </>
   );
 
+  const className = `relative inline-flex items-center h-9 px-4 rounded-full text-[13.5px] font-medium transition-colors duration-300 ${
+    active ? 'text-mo-bg' : 'text-mo-muted hover:text-mo-fg shadow-[inset_0_0_0_1px_var(--mo-line)]'
+  }`;
+
   if (!href) {
-    return <Box className={`${base} ${tone} inline-block`}>{body}</Box>;
+    return <span className={className}>{body}</span>;
   }
 
   return (
-    <Link href={href} className={`${base} ${tone} inline-block cursor-pointer`}>
+    <Link href={href} scroll={false} aria-current={active ? 'page' : undefined} className={className}>
       {body}
     </Link>
   );
